@@ -3,7 +3,7 @@ import java.awt.*;
 import java.awt.event.*;
 import gpumanagement.*;
 
-public class MainFrame extends JFrame implements ActionListener {
+public class MainFrame extends ScreenFormat implements ActionListener {
 	
     // Login fields
     private JTextField usernameField, passwordField;
