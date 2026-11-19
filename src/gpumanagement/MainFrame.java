@@ -142,7 +142,7 @@ public class MainFrame extends JFrame implements ActionListener {
             String password = passwordField.getText();
 
             if (username.equals("admin") && password.equals("gpu2026")) {
-                new Admin();
+                new AdminFrame();
                 dispose(); //used since admin is a different class
             } 
             else if (studentLoginIsValid(username, password)) {
