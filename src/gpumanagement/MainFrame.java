@@ -1,7 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import gpumanagement.*;
 
 public class MainFrame extends ScreenFormat implements ActionListener {
 	
