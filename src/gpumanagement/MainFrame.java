@@ -1,3 +1,4 @@
+package gpumanagement;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -141,12 +142,12 @@ public class MainFrame extends ScreenFormat implements ActionListener {
             String password = passwordField.getText();
 
             if (username.equals("admin") && password.equals("gpu2026")) {
-                new AdminFrame();
-                dispose(); //used since admin is a different class
+            	JOptionPane.showMessageDialog(this, "Admin login successful.");
+                
             } 
             else if (studentLoginIsValid(username, password)) {
-                new Student();
-                dispose(); //used since student is a different class
+            	JOptionPane.showMessageDialog(this, "Student login successful.");
+                
             } 
             else {
                 JOptionPane.showMessageDialog(this, "Invalid username/password or account not approved.");
