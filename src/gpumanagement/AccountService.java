@@ -10,9 +10,7 @@ public class AccountService {
     private final Map<String, Student> students = new LinkedHashMap<>();
     private final List<AccessRequest> requests = new ArrayList<>();
 
-    public AccessRequest registerStudent(String universityId, String name,
-                                         String email, String phone,
-                                         String password) {
+    public AccessRequest registerStudent(String universityId, String name,String email, String phone, String password) {
         requireText(universityId, "University ID");
         requireText(name, "Name");
         requireText(email, "Email");
@@ -22,8 +20,7 @@ public class AccountService {
         String id = universityId.trim();
 
         if (students.containsKey(id) || hasPendingRequest(id)) {
-            throw new IllegalArgumentException(
-                    "An account or pending request already uses this ID.");
+            throw new IllegalArgumentException("An account or pending request already uses this ID.");
         }
 
         AccessRequest request = new AccessRequest(
@@ -42,6 +39,52 @@ public class AccountService {
         }
 
         return Collections.unmodifiableList(pending);
+    }
+    public Student approveRequest(String universityId) {
+        return approveRequest(universityId, 100);
+    }
+
+    public Student approveRequest(String universityId, int allocatedMinutes) {
+        requireText(universityId, "University ID");
+
+        if (allocatedMinutes < 0) {
+            throw new IllegalArgumentException(
+                    "Allocated minutes cannot be negative.");
+        }
+
+        String id = universityId.trim();
+        AccessRequest request = findPendingRequest(id);
+
+        Student student = new Student(
+                request.getUniversityId(),
+                request.getName(),
+                request.getEmail(),
+                request.getPhone(),
+                request.getPasswordForAccountCreation(),
+                new TimeAllowance(allocatedMinutes)
+        );
+
+        request.approve();
+        students.put(id, student);
+        return student;
+    }
+
+    public void rejectRequest(String universityId) {
+        requireText(universityId, "University ID");
+        AccessRequest request = findPendingRequest(universityId.trim());
+        request.reject();
+    }
+
+    private AccessRequest findPendingRequest(String universityId) {
+        for (AccessRequest request : requests) {
+            if (request.getUniversityId().equals(universityId)
+                    && request.isPending()) {
+                return request;
+            }
+        }
+
+        throw new IllegalArgumentException(
+                "No pending request exists for this university ID.");
     }
 
     private boolean hasPendingRequest(String universityId) {
