@@ -28,7 +28,7 @@ public class Job {
     private String cancelledBy;
     private String cancellationReason;
 	
-	public Job(int id, String student, String t, String appname, String desc, TaskSize taskSize, LocalDateTime time) {
+	public Job(int id, String student, String t, String appname, String desc, TaskSize taskSize, LocalDateTime submissionTime) {
 
 	    jobId = id;
 	    studentId = student;
@@ -117,6 +117,24 @@ public class Job {
 		return cancellationReason;
 	}
 
+
+	public void startJob(int gpuId, LocalDateTime time) {
+		this.assignedGpuId = gpuId;
+		this.startTime = time;
+		this.status = JobStatus.RUNNING;
+	}
+	
+	public void completeJob(LocalDateTime time) {
+		this.finishTime = time;
+		this.status = JobStatus.COMPLETED;
+	}
+	
+	public void cancelJob(LocalDateTime time, String cancelledBy, String reason) {
+		this.cancellationTime = time;
+		this.cancelledBy = cancelledBy;
+		this.cancellationReason = reason;
+		this.status = JobStatus.CANCELLED;
+	}
 
 	@Override
 	public String toString() {
