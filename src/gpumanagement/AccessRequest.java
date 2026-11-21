@@ -62,4 +62,7 @@ public class AccessRequest {
     String getPasswordForAccountCreation() {
         return password;
     }
+    void restoreStatus(Status savedStatus) {
+        status = savedStatus;
+    }
 }
