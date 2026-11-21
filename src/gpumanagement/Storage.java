@@ -4,110 +4,150 @@ import java.io.*;
 import java.util.*;
 
 public class Storage{
-	
 	private static final String FILE_NAME = "gpu_data.txt";
-	private void writeTable(PrintWriter file, String name, String[][] accounts){
-		file.println(name);
-		int nrows = 0;
-		int ncolumns = 0;
-		if (accounts != null) {
-			nrows = accounts.length;
-			if(nrows>0) {
-				ncolumns = accounts[0].length;
-			}
-		}
-		
-		file.println(nrows);
-		file.println(ncolumns);
-		
-		for(int i=0;i<nrows;i++) {
-			for(int j=0;j<ncolumns;j++) {
-				String value = accounts[i][j];
-				if(value == null) {
-					value = "";
-				}
-				
-				value = value.replace('\n', ' ').replace('\r', ' ');
-				file.println(value);
-				if (j < ncolumns - 1) {
-		            file.print("|");
+	
+	private void writeTable(PrintWriter output, String section, String headings, String[][] rows) {
+
+	    output.println("[" + section + "]");
+	    String[] headingCells = headings.split("\\s*\\|\\s*");
+	    int[] widths = new int[headingCells.length];
+
+	    for (int i = 0; i < headingCells.length; i++) {
+	        widths[i] = headingCells[i].length();
+	    }
+
+	    if (rows != null) {
+	        for (int i = 0; i < rows.length; i++) {
+	            for (int j = 0; j < headingCells.length; j++) {
+	                String value = rows[i][j] == null ? "" : rows[i][j];
+	                value = value.replace('\n', ' ')
+	                             .replace('\r', ' ')
+	                             .replace('|', '/');
+	                widths[j] = Math.max(widths[j], value.length()); // align like a table
 	            }
-			}
-			file.println();
-		}
+	        }
+	    }
+
+	    for (int j = 0; j < headingCells.length; j++) {
+	        output.print(headingCells[j]);
+	        for (int space = headingCells[j].length(); space < widths[j]; space++) {
+	            output.print(" ");
+	        }
+	        if (j < headingCells.length - 1) {
+	            output.print(" | ");
+	        }
+	    }
+	    output.println();
+
+	    if (rows == null || rows.length == 0) {
+	        output.println("(no records)");
+	    } else {
+	        for (int i = 0; i < rows.length; i++) {
+	            for (int j = 0; j < headingCells.length; j++) {
+	                String value = rows[i][j] == null ? "" : rows[i][j];
+	                value = value.replace('\n', ' ')
+	                             .replace('\r', ' ')
+	                             .replace('|', '/');
+
+	                output.print(value);
+	                for (int space = value.length(); space < widths[j]; space++) {
+	                    output.print(" ");
+	                }
+	                if (j < headingCells.length - 1) {
+	                    output.print(" | ");
+	                }
+	            }
+	            output.println();
+	        }
+	    }
+
+	    output.println();
 	}
-	public void saveInFile(String clockText,String[][] accounts, String[][] requests, String[][] allowances,
-            String[][] jobs, String[][] cancellations, String[][] gpuAssignments) throws Exception{
-		
-		PrintWriter file = new PrintWriter(FILE_NAME);
-		file.println("Clock:");
-		file.println(clockText == null? "Clock not set" : clockText); 
-		writeTable(file, "Accounts:", accounts);
-		writeTable(file, "Requests:", requests);
-		writeTable(file, "Allowances:", allowances);
-		writeTable(file, "Jobs:", jobs);
-		writeTable(file, "Cancellations:", cancellations);
-		writeTable(file, "GPU Assignments:", gpuAssignments);
-		
-		file.close();
-		System.out.println(
-			    "Saving to: " + System.getProperty("user.dir") + "/" + FILE_NAME
-			);
-	}
+	 public void saveInFile(String clockText, String simulationStartText, String[][] accounts, String[][] requests, String[][] allowances,
+	            String[][] grants, String[][] jobs, String[][] cancellations, String[][] gpuAssignments) throws Exception {
+		 
+	        PrintWriter file = new PrintWriter(FILE_NAME);
+	        file.println("GPU UTILIZATION MANAGEMENT - SAVED DATA");
+	        file.println("Clock: " + (clockText == null ? "Not set" : clockText));
+	        file.println("Simulation start: " + (simulationStartText == null ? "Not set" : simulationStartText));
+	        file.println();
+
+	        writeTable(file, "Accounts", "University ID | Name | Email | Phone | Password", accounts);
+	        writeTable(file, "Requests", "University ID | Name | Email | Phone | Password | Status", requests);
+	        writeTable(file, "Allowances", "Student ID | Allocated | Used | Reserved", allowances);
+	        writeTable(file, "Grants", "Student ID | Minutes | Reason | Administrator", grants);
+	        writeTable(file, "Jobs", "Job ID | Student ID | Title | Application | Description | Size | Submitted | Status | GPU | Started | Finished | Cancelled at | Cancelled by | Reason", jobs);
+	        writeTable(file, "Cancellations", "Job ID | Student ID | Status before cancellation | Application | Reason | Cancelled by | Cancellation time", cancellations);
+	        writeTable(file, "GPU Assignments", "GPU ID | Job ID", gpuAssignments);
+	        file.close();
+	        System.out.println("Saved data to: " + System.getProperty("user.dir") + "/" + FILE_NAME);
+	    }
 	
 	private String[][] readSection(String name){
+		ArrayList<String[]> rows = new ArrayList<>();
 		try {
 			Scanner input = new Scanner(new FileReader(FILE_NAME));
-			while (input.hasNextLine()) {
-				String line = input.nextLine();
-				if(line.equals(name)) {
-					int nrows = Integer.parseInt(input.nextLine());
-					int ncols = Integer.parseInt(input.nextLine());
-				
-					String[][] accounts = new String[nrows][ncols];
-				
-					for (int i = 0; i < nrows; i++) {
-					    String[] values = input.nextLine().split("\\|", -1);
-
-					    for (int j = 0; j < ncols; j++) {
-					        accounts[i][j] = values[j];
-					    }
-					}
-					input.close();
-					return accounts;
-				}
-			}
+			boolean readingRows = false;
 			
-			input.close();
-			return new String[0][0];
-		} catch (FileNotFoundException e) {
-			return new String[0][0];
-		}
-	}
-	
-	public String[][] loadAccount()throws FileNotFoundException{return readSection("Accounts:");}
-	public String[][] loadRequests()throws FileNotFoundException{return readSection("Requests:");}
-	public String[][] loadAllowance()throws FileNotFoundException{return readSection("Allowance:");}
-	public String[][] loadJobs()throws FileNotFoundException{return readSection("Jobs:");}
-	public String[][] loadCancellation()throws FileNotFoundException{return readSection("Cancellation:");}
-	public String[][] loadGpuAssignments()throws FileNotFoundException{return readSection("GPU Assignments:");}
-	
-	public String loadClock()throws FileNotFoundException{
-		try {
-			Scanner input = new Scanner(new FileReader(FILE_NAME));
-			String result = "Not set";
 			while (input.hasNextLine()) {
-				if(input.nextLine().equals("Clock:")) {
-					if(input.hasNextLine()) {
-						result = input.nextLine();
-					}
-					break;
-				}
-			}
-			input.close();
-			return result;
-		}catch(FileNotFoundException e) {
-			return "Not Set";
-		}
+				String line = input.nextLine().trim();
+
+                if (!readingRows) {
+                    if (line.equals("[" + name + "]")) {
+                        readingRows = true;
+                        if (input.hasNextLine()) input.nextLine(); 
+                    }
+                } else {
+                    if (line.isEmpty() || line.startsWith("[")) break;
+                    if (!line.equals("(no records)")) {
+                        rows.add(line.split("\\s*\\|\\s*", -1));
+                    }
+                }
+            }
+            input.close();
+        } catch (FileNotFoundException ex) {
+        }
+        return rows.toArray(new String[rows.size()][]);
+    }
+	private String readTime(String label) {
+	    try {
+	        Scanner input = new Scanner(new FileReader(FILE_NAME));
+
+	        while (input.hasNextLine()) {
+	            String line = input.nextLine().trim();
+
+	            if (line.equals(label)) {
+	                if (input.hasNextLine()) {
+	                    String value = input.nextLine().trim();
+	                    input.close();
+	                    return value.isEmpty() ? "Not set" : value;
+	                }
+	                break;
+	            }
+
+	            if (line.startsWith(label)) {
+	                String value = line.substring(label.length()).trim();
+	                if (!value.isEmpty()) {
+	                    input.close();
+	                    return value;
+	                }
+	            }
+	        }
+
+	        input.close();
+	    } catch (FileNotFoundException ex) {
+	        // File not saved yet
+	    }
+
+	    return "Not set";
 	}
+	public String loadClock() { return readTime("Clock:"); }
+    public String loadSimulationStart() { return readTime("Simulation start:"); }
+    public String[][] loadAccount() { return readSection("Accounts"); }
+    public String[][] loadRequests() { return readSection("Requests"); }
+    public String[][] loadAllowance() { return readSection("Allowances"); }
+    public String[][] loadAllowanceGrants() { return readSection("Grants"); }
+    public String[][] loadJobs() { return readSection("Jobs"); }
+    public String[][] loadCancellation() { return readSection("Cancellations"); }
+    public String[][] loadGpuAssignments() { return readSection("GPU Assignments"); }
 }
