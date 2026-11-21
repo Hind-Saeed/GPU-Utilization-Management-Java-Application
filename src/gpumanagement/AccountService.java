@@ -88,8 +88,7 @@ public class AccountService {
                 "No pending request exists for this university ID.");
     }
     public User login(String username, String password) {
-        if (username == null || username.isBlank()
-                || password == null || password.isBlank()) {
+        if (username == null || username.isBlank()|| password == null || password.isBlank()) {
             return null;
         }
 
