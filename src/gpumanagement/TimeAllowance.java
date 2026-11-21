@@ -12,6 +12,15 @@ public class TimeAllowance {
         this.allocatedMinutes = allocatedMinutes;
     }
 
+     public TimeAllowance(int allocated, int used, int reserved) {
+        if (allocated < 0 || used < 0 || reserved < 0 || used + reserved > allocated) {
+            throw new IllegalArgumentException("Invalid saved allowance values.");
+        }
+        allocatedMinutes = allocated;
+        usedMinutes = used;
+        reservedMinutes = reserved;
+    }
+
     public int getAllocatedMinutes() {
         return allocatedMinutes;
     }
@@ -54,17 +63,14 @@ public class TimeAllowance {
             throw new IllegalArgumentException(
                     "Elapsed minutes must be between zero and the reservation.");
         }
-
         reservedMinutes -= reservedDuration;
         usedMinutes += elapsedMinutes;
     }
 
     public void grantMinutes(int minutes) {
         if (minutes <= 0) {
-            throw new IllegalArgumentException(
-                    "Granted minutes must be positive.");
+            throw new IllegalArgumentException("Granted minutes must be positive.");
         }
-
         allocatedMinutes += minutes;
     }
 
