@@ -135,6 +135,14 @@ public class AccountService {
     public List<AllowanceGrant> getAllowanceGrants() {
         return Collections.unmodifiableList(new ArrayList<>(allowanceGrants));
     }
+    public List<Student> getStudents(User requestedBy) {
+        if (!(requestedBy instanceof Administrator)) {
+            throw new SecurityException("Only an administrator can view students.");
+        }
+
+        return Collections.unmodifiableList(
+                new ArrayList<>(students.values()));
+    }
     private boolean hasPendingRequest(String universityId) {
         for (AccessRequest request : requests) {
             if (request.isPending()

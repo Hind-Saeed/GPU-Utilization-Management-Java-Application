@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import gpu.scheduling.Scheduler;
 
 public class MainFrame extends ScreenFormat implements ActionListener {
 	
@@ -132,7 +133,7 @@ public class MainFrame extends ScreenFormat implements ActionListener {
     	    Student loggedIn = studentLogin(username, password);   // null if no match
 
     	    if (username.equals("admin") && password.equals("gpu2026")) {
-    	        new AdminFrame();
+    	    	new AdminFrame(scheduler, accountService, accountService.login(username, password));
     	        dispose();
     	    }
     	    else if (loggedIn != null) {
