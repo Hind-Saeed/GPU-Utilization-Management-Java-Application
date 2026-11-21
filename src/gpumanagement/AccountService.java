@@ -158,4 +158,17 @@ public class AccountService {
             throw new IllegalArgumentException(fieldName + " is required.");
         }
     }
+    public List<AccessRequest> getAllRequests() {
+        return Collections.unmodifiableList(new ArrayList<>(requests));
+    }
+    public void restoreStudent(Student student) {
+        students.put(student.getUniversityId(), student);
+    }
+    public void restoreRequest(AccessRequest request, AccessRequest.Status status) {
+        request.restoreStatus(status);
+        requests.add(request);
+    }
+    public void restoreAllowanceGrant(AllowanceGrant grant) {
+        allowanceGrants.add(grant);
+    }
 }
