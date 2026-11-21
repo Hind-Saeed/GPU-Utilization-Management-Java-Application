@@ -13,11 +13,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 
-import gpu.scheduling.Job;
-import gpu.scheduling.JobStatus;
-import gpu.scheduling.Scheduler;
-import gpu.scheduling.TaskSize;
-
 public class StudentFrame extends ScreenFormat implements ActionListener {
 
     private Student student;

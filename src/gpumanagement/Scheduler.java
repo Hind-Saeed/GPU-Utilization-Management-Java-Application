@@ -1,6 +1,7 @@
-package gpu.scheduling;
+package gpumanagement;
 import java.util.*;
 import java.time.*;
+
 public class Scheduler {
 	
 	private Queue<Job> waitingQueue;
@@ -9,6 +10,7 @@ public class Scheduler {
     private Map<String, TimeAllowance> studentAllowances;
     private ArrayList<Job> allJobs;
     private int nextJobId;
+    private LocalDateTime initialSimulationTime;
     
     public Scheduler(LocalDateTime startTime) {
         waitingQueue = new LinkedList<>();
@@ -17,6 +19,7 @@ public class Scheduler {
             gpus[i] = new GPU(i + 1);
         }
         simulationTime = startTime;
+        initialSimulationTime = startTime;
         studentAllowances = new HashMap<>();
         allJobs = new ArrayList<>();
         nextJobId = 1;
@@ -40,9 +43,14 @@ public class Scheduler {
     
     public Job submitJob(String studentId, String title, String applicationName, String description, TaskSize size) {
     	
-    	if (studentId == null || studentId.isBlank()|| size == null) {
-            return null;
-        }
+    	if (studentId == null || studentId.isBlank()
+    	        || title == null || title.isBlank()
+    	        || applicationName == null || applicationName.isBlank()
+    	        || description == null || description.isBlank()
+    	        || size == null) {
+
+    	    return null;
+    	}
 
         TimeAllowance allowance = studentAllowances.get(studentId);
 
@@ -61,6 +69,7 @@ public class Scheduler {
         nextJobId++;
 
         waitingQueue.add(job);
+        sortWaitingQueue();
         allJobs.add(job);
 
         assignWaitingJobs();
@@ -68,6 +77,33 @@ public class Scheduler {
         return job;
     	
     }
+    
+    private void sortWaitingQueue() {
+    	
+    	ArrayList<Job> sorted = new ArrayList<>(waitingQueue);
+
+        for (int i = 0; i < sorted.size(); i++) {
+
+            for (int j = i + 1; j < sorted.size(); j++) {
+
+                Job first = sorted.get(i);
+                Job second = sorted.get(j);
+
+                if (second.getSubmissionTime().isBefore(first.getSubmissionTime())||
+                   (second.getSubmissionTime().isEqual(first.getSubmissionTime())
+                    && second.getJobId() < first.getJobId())) {
+
+                    sorted.set(i, second);
+                    sorted.set(j, first);
+                }
+            }
+        }
+
+        waitingQueue.clear();
+        waitingQueue.addAll(sorted);
+        
+    }
+
     
     public void registerAllowance(String studentId,TimeAllowance allowance) {
         
@@ -104,6 +140,7 @@ public class Scheduler {
         }
 
         waitingQueue.add(job);
+        sortWaitingQueue();
         allJobs.add(job);
 
         if (job.getJobId() >= nextJobId) {
@@ -336,6 +373,79 @@ public class Scheduler {
 
         return null;
     }
+    
+    public double getUtilization() {
 
-	
+        long elapsed = Duration.between(initialSimulationTime, simulationTime).toMinutes();
+
+        if (elapsed == 0) {
+            return Double.NaN;
+        }
+
+        long busyMinutes = 0;
+
+        for (Job job : allJobs) {
+
+            if (job.getStartTime() != null) {
+
+                LocalDateTime end;
+
+                if (job.getStatus() == JobStatus.RUNNING) {
+                    end = simulationTime;
+                } 
+                else {
+                    end = job.getFinishTime();
+                }
+
+                if (end != null) {
+                    busyMinutes += Duration.between(job.getStartTime(), end).toMinutes();
+                }
+            }
+        }
+
+        return (busyMinutes * 100.0) /
+               (4 * elapsed);
+    }
+    
+    public LocalDateTime getPredictedStartTime(Job job) {
+
+        if (job == null) {
+            return null;
+        }
+
+        if (job.getStartTime() != null) {
+            return job.getStartTime();
+        }
+
+        int wait = predictWaitingTime(job);
+
+        if (wait == -1) {
+            return null;
+        }
+
+        return simulationTime.plusMinutes(wait);
+    }
+    
+    public LocalDateTime getPredictedFinishTime(Job job) {
+
+        if (job == null) {
+            return null;
+        }
+
+        if (job.getFinishTime() != null) {
+            return job.getFinishTime();
+        }
+
+        if (job.getStatus() == JobStatus.CANCELLED) {
+            return null;
+        }
+
+        LocalDateTime start = getPredictedStartTime(job);
+
+        if (start == null) {
+            return null;
+        }
+
+        return start.plusMinutes(job.getDuration());
+    }
 }

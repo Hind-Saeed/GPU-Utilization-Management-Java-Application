@@ -1,4 +1,4 @@
-package gpu.scheduling;
+package gpumanagement;
 
 public enum JobStatus {
 	

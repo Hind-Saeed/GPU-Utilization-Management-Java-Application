@@ -1,6 +1,5 @@
 package gpumanagement;
 import java.io.*;
-import gpu.scheduling.Scheduler;
 import java.util.*;
 import java.util.List;
 import javax.swing.*;
