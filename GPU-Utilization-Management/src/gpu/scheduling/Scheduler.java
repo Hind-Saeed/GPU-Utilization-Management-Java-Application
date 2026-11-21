@@ -1,6 +1,8 @@
 package gpu.scheduling;
 import java.util.*;
 import java.time.*;
+import gpumanagement.TimeAllowance;
+
 public class Scheduler {
 	
 	private Queue<Job> waitingQueue;
