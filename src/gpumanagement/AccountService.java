@@ -9,6 +9,7 @@ import java.util.Map;
 public class AccountService {
     private final Map<String, Student> students = new LinkedHashMap<>();
     private final List<AccessRequest> requests = new ArrayList<>();
+    private final Administrator administrator = new Administrator();
 
     public AccessRequest registerStudent(String universityId, String name,String email, String phone, String password) {
         requireText(universityId, "University ID");
@@ -85,6 +86,27 @@ public class AccountService {
 
         throw new IllegalArgumentException(
                 "No pending request exists for this university ID.");
+    }
+    public User login(String username, String password) {
+        if (username == null || username.isBlank()
+                || password == null || password.isBlank()) {
+            return null;
+        }
+
+        String id = username.trim();
+
+        if (administrator.getUsername().equals(id)
+                && administrator.passwordMatches(password)) {
+            return administrator;
+        }
+
+        Student student = students.get(id);
+
+        if (student != null && student.passwordMatches(password)) {
+            return student;
+        }
+
+        return null;
     }
 
     private boolean hasPendingRequest(String universityId) {
