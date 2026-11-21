@@ -127,52 +127,42 @@ public class MainFrame extends ScreenFormat implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-    	if (e.getSource() == login) {
-    	    String username = usernameField.getText();
-    	    String password = passwordField.getText();
-    	    Student loggedIn = studentLogin(username, password);   // null if no match
+        if (e.getSource() == login) {
+            String username = usernameField.getText().trim();
+            String enteredPassword = passwordField.getText();
 
-    	    if (username.equals("admin") && password.equals("gpu2026")) {
-    	    	new AdminFrame(scheduler, accountService, accountService.login(username, password));
-    	        dispose();
-    	    }
-    	    else if (loggedIn != null) {
-    	        new StudentFrame(loggedIn);
-    	        dispose();
-    	    }
-    	    else if (username.equals("student") && password.equals("1234")) {
-    	        // demo Student to allow updates.
-    	    	Student demoStudent = new Student("S001", "Demo Student", "demo@example.com","0500000000","demoPassword", new TimeAllowance(100));
+            User loggedIn = accountService.login(username, enteredPassword);
 
-    	        new StudentFrame(demoStudent);
-    	        dispose();
-    	    }
-    	    else {
-    	        JOptionPane.showMessageDialog(this, "Invalid username/password or account not approved.");
-    	    }
-    	} 
-        else if (e.getSource() == register) {
+            if (loggedIn instanceof Administrator) {
+                new AdminFrame(scheduler, accountService, loggedIn);
+                dispose();
+            } else if (loggedIn instanceof Student) {
+                new StudentFrame((Student) loggedIn);
+                dispose();
+            } else {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Invalid username/password, or the account is awaiting approval.");
+            }
+        } else if (e.getSource() == register) {
             registerPage();
-
-        } 
-        else if (e.getSource() == back) {
+        } else if (e.getSource() == back) {
             loginPage();
-        } 
-        else if (e.getSource() == submitRequest) {
-            String enteredId = id.getText();
-            String enteredName = name.getText();
-            String enteredEmail = email.getText();
-            String enteredPhone = phone.getText();
-            String enteredPassword = password.getText();
-            
-            // if a field is left empty
-            if (enteredId.isEmpty() || enteredName.isEmpty()|| enteredEmail.isEmpty() || enteredPhone.isEmpty()
-                    || enteredPassword.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Fill all fields");
-            } 
-            else {
-                // Access Request class from member 1
-                JOptionPane.showMessageDialog(this, "Access from member1.");
+        } else if (e.getSource() == submitRequest) {
+            try {
+                accountService.registerStudent(
+                        id.getText(),
+                        name.getText(),
+                        email.getText(),
+                        phone.getText(),
+                        password.getText());
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Registration request submitted. Wait for administrator approval.");
+                loginPage();
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage());
             }
         }
     }

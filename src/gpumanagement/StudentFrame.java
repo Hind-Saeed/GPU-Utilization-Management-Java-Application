@@ -1,11 +1,22 @@
 package gpumanagement;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JTextField;
+
+import gpu.scheduling.Job;
+import gpu.scheduling.JobStatus;
+import gpu.scheduling.Scheduler;
+import gpu.scheduling.TaskSize;
 
 public class StudentFrame extends ScreenFormat implements ActionListener {
 
