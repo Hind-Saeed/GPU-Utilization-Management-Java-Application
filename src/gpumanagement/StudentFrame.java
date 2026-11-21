@@ -1,39 +1,22 @@
 package gpumanagement;
 
-import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JTextField;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
 
 public class StudentFrame extends ScreenFormat implements ActionListener {
 
-    private Student student;
+    private JLabel allocated, used, reserved, available, durationLabel;
 
-    private JLabel allocated, used, reserved, available;
-
-    private JButton submitJobB, myJobsB, logoutB, backB;
-    private JTextField titleField, applicationField, descriptionField;
+    private JButton submitJobB, myJobsB, logoutB, backB, submitB, searchButton, cancelJobButton;
     private JButton[] sizeButtons;
-    private JButton submitB;
-    private JLabel durationLabel;
-    private TaskSize selectedSize;
-
+    
+    private JTextField titleField, applicationField, descriptionField;
     private JTextField searchField, cancelJobIdField, cancelReasonField;
-    private JButton searchButton, cancelJobButton;
-    private ArrayList<Job> myJobs = new ArrayList<>();
-
-    //ID counter to help avoid duplicate. Replace with proper ID assignments from member 2.
-    private static int nextJobId = 1;
-
-	private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"); // format date
+    
+    private Student student;
+    private TaskSize selectedSize;
 
     public StudentFrame(Student student) {
         this.student = student;
@@ -47,9 +30,8 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
 
     public void studentPage() {
         clearScreen(0, 2);
-
+        
         TimeAllowance allowance = student.getAllowance();
-        // View allocated, used, reserved, and available GPU minutes
         allocated = new JLabel("Allocated GPU minutes: " + allowance.getAllocatedMinutes(),JLabel.CENTER);
         used = new JLabel("Used GPU minutes: " + allowance.getUsedMinutes(),JLabel.CENTER);
         reserved = new JLabel("Reserved GPU minutes: " + allowance.getReservedMinutes(),JLabel.CENTER);
@@ -82,7 +64,7 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
 
     public void submitJobPage() {
         clearScreen(0, 2);
-        //Enter a job title, application name, and description; select a task size and confirm its duration.
+
         titleField = new JTextField();
         applicationField = new JTextField();
         descriptionField = new JTextField();
@@ -132,13 +114,14 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
         refreshScreen();
     }
     
-    //View and search own jobs, including status, assigned GPU, predicted start/finish, waiting time, and results.
     public void myJobsPage(String searchText) {
         clearScreen(0, 9);
         
         add(makeLabel("MY JOBS", Color.BLACK, Color.WHITE));
 
-        for (int i = 0; i < 7; i++) { add(new JLabel(""));}
+        for (int i = 0; i < 7; i++) {
+        	add(new JLabel(""));
+        	}
 
         backB = makeButton("Back to dashboard");
         add(backB);
@@ -152,35 +135,30 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
 
         String[] headings = {"Job ID", "Title", "Application", "Status", "GPU","Predicted start", "Predicted finish", "Wait", "Result"};
         for (int i = 0; i < headings.length; i++) {add(makeLabel(headings[i], Color.PINK, Color.BLACK));}
+        
+        ArrayList<Job> jobs;
+        if (MainFrame.scheduler == null) {jobs = new ArrayList<Job>();} 
+        else {jobs = MainFrame.scheduler.getAllJobs();}
+
+        String[][] rows = JobRows.studentRows(jobs, student.getUniversityId(), MainFrame.scheduler);
 
         int searchedJobs = 0;
-        for (int i = 0; i < myJobs.size(); i++) {
-            Job job = myJobs.get(i);
-            boolean match = searchText.isEmpty() || ("" + job.getJobId()).contains(searchText);
+        for (int i = 0; i < rows.length; i++) {
+            boolean match = searchText.isEmpty() || rows[i][0].equals(searchText);
 
             if (match) {
-                add(new JLabel("" + job.getJobId(), JLabel.CENTER));
-                add(new JLabel(job.getTitle(), JLabel.CENTER));
-                add(new JLabel(job.getApplicationName(), JLabel.CENTER));
-                add(new JLabel("" + job.getStatus(), JLabel.CENTER));
-
-                Integer gpuId = job.getAssignedGpuId();
-                add(new JLabel(gpuId == null ? "--" : "GPU " + gpuId,JLabel.CENTER));
-
-                add(new JLabel(predStart(job), JLabel.CENTER));
-                add(new JLabel(predFinish(job), JLabel.CENTER));
-                add(new JLabel(waitTime(job), JLabel.CENTER));
-
-                // The provided Job class has no result field yet.
-                add(new JLabel("--", JLabel.CENTER));
-
+                for (int j = 0; j < rows[i].length; j++) {
+                    add(new JLabel(rows[i][j], JLabel.CENTER));
+                }
                 searchedJobs++;
             }
         }
 
         if (searchedJobs == 0) {
             add(new JLabel("No jobs with that ID.", JLabel.CENTER));
-            for (int i = 0; i < 8; i++) {add(new JLabel(""));}
+            for (int i = 0; i < 8; i++) {
+                add(new JLabel(""));
+            }
         }
 
         add(new JLabel("Job ID to cancel:"));
@@ -204,51 +182,7 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
 
         refreshScreen();
     }
- 
-    private String predStart(Job job) {
-        Scheduler scheduler = MainFrame.scheduler;
-
-        if (job.getStartTime() != null) {return formatTime(job.getStartTime());}
-        if (scheduler == null) {return "--";}
-
-        int wait = scheduler.predictWaitingTime(job);
-        if (wait < 0) {return "--";}
-        
-        return formatTime(scheduler.getSimulationTime().plusMinutes(wait)); //add waiting to simulating time
-    }
-
-    private String predFinish(Job job) {
-        if (job.getFinishTime() != null) {return formatTime(job.getFinishTime());}
-
-        String start = predStart(job);
-        if (start.equals("--")) {return "--";}
-
-        LocalDateTime startTime;
-        if (job.getStartTime() != null) {startTime = job.getStartTime();} 
-        else {
-            Scheduler scheduler = MainFrame.scheduler;
-            int wait = scheduler.predictWaitingTime(job);
-            startTime = scheduler.getSimulationTime().plusMinutes(wait);
-        }
-
-        return formatTime(startTime.plusMinutes(job.getDuration()));
-    }
-
-    private String waitTime(Job job) {
-        if (job.getStatus() == JobStatus.RUNNING || job.getStatus() == JobStatus.COMPLETED) {
-            return "0 min";
-        }
-
-        Scheduler scheduler = MainFrame.scheduler;
-
-        if (scheduler == null) {return "--";}
-
-        int wait = scheduler.predictWaitingTime(job);
-        return wait < 0 ? "--" : wait + " min";
-    }
-
-    private String formatTime(LocalDateTime time) {return time == null ? "--" : time.format(FMT);}
-
+    
     private void selectSize(int i) {
         if (i == 0) {selectedSize = TaskSize.SMALL;} 
         else if (i == 1) {selectedSize = TaskSize.MEDIUM;} 
@@ -262,8 +196,8 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
         String application = applicationField.getText().trim();
         String description = descriptionField.getText().trim();
 
-        if (title.isEmpty() || application.isEmpty()|| description.isEmpty() || selectedSize == null) {
-            JOptionPane.showMessageDialog(this,"Fill all fields");
+        if (title.isEmpty() || application.isEmpty() || description.isEmpty() || selectedSize == null) {
+        	JOptionPane.showMessageDialog(this, "Fill all fields.");
             return;
         }
 
@@ -273,20 +207,15 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
             return;
         }
 
-        int duration = selectedSize.getDuration();
-        TimeAllowance allowance = student.getAllowance();
+        Job job = scheduler.submitJob(student.getUniversityId(),title, application, description, selectedSize);
 
-        if (duration > allowance.getAvailableMinutes()) {
-            JOptionPane.showMessageDialog(this, "You do not have enough available GPU minutes.");
+        if (job == null) {
+            JOptionPane.showMessageDialog(this,"The job could not be submitted. Check the student's available GPU minutes and registered allowance.");
             return;
         }
 
-        Job job = new Job(nextJobId++, student.getUniversityId(), title, application, description, selectedSize, scheduler.getSimulationTime());
-        scheduler.addJob(job);
-        scheduler.assignWaitingJobs();
-        myJobs.add(job);
+        JOptionPane.showMessageDialog(this, "Job " + job.getJobId() + " submitted. Status: " + job.getStatus());
 
-        JOptionPane.showMessageDialog( this,"Job " + job.getJobId() + " was added to the queue.");
         studentPage();
     }
 
@@ -302,21 +231,27 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
         int requestedId;
         try {
             requestedId = Integer.parseInt(jobText);
-        } 
-        catch (NumberFormatException ex) {
+        } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Enter the job ID as a number.");
             return;
         }
 
+        Scheduler scheduler = MainFrame.scheduler;
+        if (scheduler == null) {
+            JOptionPane.showMessageDialog(this, "The scheduler is not available.");
+            return;
+        }
+
         Job selectedJob = null;
-        for (int i = 0; i < myJobs.size(); i++) {
-            if (myJobs.get(i).getJobId() == requestedId) {
-                selectedJob = myJobs.get(i);
+        ArrayList<Job> jobs = scheduler.getAllJobs();
+        for (Job job : jobs) {
+            if (job.getJobId() == requestedId) {
+                selectedJob = job;
                 break;
             }
         }
 
-        if (selectedJob == null|| !selectedJob.getStudentId().equals(student.getUniversityId())) {
+        if (selectedJob == null || !selectedJob.getStudentId().equals(student.getUniversityId())) {
             JOptionPane.showMessageDialog(this, "Job not found.");
             return;
         }
@@ -326,7 +261,14 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
             return;
         }
 
-        //Cancellation uses cancelJob method from member 2 to remove it from schedule - must update!
+        boolean success = scheduler.cancelJob(requestedId, student.getUniversityId(), reason);
+
+        if (success) {
+            JOptionPane.showMessageDialog(this, "Job cancelled.");
+            myJobsPage("");
+        } else {
+            JOptionPane.showMessageDialog(this, "The job could not be cancelled.");
+        }
     }
     @Override
     public void actionPerformed(ActionEvent e) {
