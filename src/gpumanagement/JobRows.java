@@ -1,11 +1,12 @@
 package gpumanagement;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+
+import java.time.*;
+import java.time.format.*;
+import java.util.*;
 
 public class JobRows {
-    private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    
+	private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static String formatTime(LocalDateTime time) {
         if (time == null) { return "--";}
         return time.format(FORMAT);
@@ -13,15 +14,6 @@ public class JobRows {
 
     private static long minutesBetween(LocalDateTime start, LocalDateTime end) {
         return Duration.between(start, end).toMinutes();
-    }
-
-    public static Job findById(ArrayList<Job> jobs, String enteredId) {
-        int id;
-        id = Integer.parseInt(enteredId.trim());
-        for (Job job : jobs) {
-            if (job.getJobId() == id) {return job;}
-        }
-        return null;
     }
 
     public static int count(ArrayList<Job> jobs, JobStatus status) {
@@ -42,12 +34,9 @@ public class JobRows {
             rows[i][4] = "--";
         }
 
-        if (scheduler == null) {
-            return rows;
-        }
+        if (scheduler == null) { return rows;}
 
         LocalDateTime now = scheduler.getSimulationTime();
-
         for (Job job : jobs) {
             if (job.getStatus() == JobStatus.RUNNING && job.getAssignedGpuId() != null) {
                 int row = job.getAssignedGpuId() - 1;
@@ -55,7 +44,7 @@ public class JobRows {
                     LocalDateTime finish = job.getStartTime().plusMinutes(job.getDuration());
                     rows[row][1] = "Busy";
                     rows[row][2] = "Job " + job.getJobId();
-                    rows[row][3] = minutesBetween(now, finish) + " min";
+                    rows[row][3] = Math.max(0, minutesBetween(now, finish)) + " min";
                     rows[row][4] = formatTime(finish);
                 }
             }
@@ -67,23 +56,32 @@ public class JobRows {
     public static String[][] queued(ArrayList<Job> jobs, Scheduler scheduler) {
         ArrayList<String[]> rows = new ArrayList<>();
         int position = 0;
+
         for (Job job : jobs) {
             if (job.getStatus() == JobStatus.QUEUED) {
                 position++;
-                int wait = -1;
-                if (scheduler != null) {wait = scheduler.predictWaitingTime(job);}	
                 String start = "--";
                 String finish = "--";
                 String waitText = "--";
-                if (wait >= 0) {
-                    LocalDateTime predictedStart = scheduler.getSimulationTime().plusMinutes(wait);
-                    LocalDateTime predictedFinish = predictedStart.plusMinutes(job.getDuration());
-                    start = formatTime(predictedStart);
-                    finish = formatTime(predictedFinish);
-                    waitText = wait + " min";
+
+                if (scheduler != null) {
+                    int wait = scheduler.predictWaitingTime(job);
+                    if (wait >= 0) {
+                        start = formatTime(scheduler.getPredictedStartTime(job));
+                        finish = formatTime(scheduler.getPredictedFinishTime(job));
+                        waitText = wait + " min";
+                    }
                 }
-                rows.add(new String[] {"" + job.getJobId(),job.getStudentId(), job.getApplicationName(),job.getDuration() + " min",
-                    "" + position, start, finish, waitText});
+                rows.add(new String[]{
+                    "" + job.getJobId(),
+                    job.getStudentId(),
+                    job.getApplicationName(),
+                    job.getDuration() + " min",
+                    "" + position,
+                    start,
+                    finish,
+                    waitText
+                });
             }
         }
         return rows.toArray(new String[rows.size()][]);
@@ -134,48 +132,59 @@ public class JobRows {
     }
 
     public static String[][] studentRows(ArrayList<Job> jobs, String studentId, Scheduler scheduler) {
+
         ArrayList<String[]> rows = new ArrayList<>();
         for (Job job : jobs) {
-            if (!job.getStudentId().equals(studentId)) {continue;}
+            if (!job.getStudentId().equals(studentId)) {
+                continue;
+            }
 
             String gpu = "--";
             if (job.getAssignedGpuId() != null) {gpu = "GPU " + job.getAssignedGpuId();}
+
             String start = formatTime(job.getStartTime());
             String finish = formatTime(job.getFinishTime());
             String wait = "--";
-            String result = "";
+            String result;
 
             if (job.getStatus() == JobStatus.QUEUED) {
+                result = "Queued";
                 if (scheduler != null) {
                     int waitMinutes = scheduler.predictWaitingTime(job);
                     if (waitMinutes >= 0) {
-                        LocalDateTime predictedStart = scheduler.getSimulationTime().plusMinutes(waitMinutes);
+                        LocalDateTime predictedStart =scheduler.getSimulationTime().plusMinutes(waitMinutes);
                         start = formatTime(predictedStart);
                         finish = formatTime(predictedStart.plusMinutes(job.getDuration()));
                         wait = waitMinutes + " min";
                     }
                 }
-                result = "Queued";
+
             } else if (job.getStatus() == JobStatus.RUNNING) {
                 finish = formatTime(job.getStartTime().plusMinutes(job.getDuration()));
+                wait = minutesBetween(job.getSubmissionTime(), job.getStartTime()) + " min";
                 result = "Running";
+
             } else if (job.getStatus() == JobStatus.COMPLETED) {
                 long runtime = minutesBetween(job.getStartTime(), job.getFinishTime());
+                wait = minutesBetween(job.getSubmissionTime(), job.getStartTime()) + " min";
                 result = "Completed, charged " + runtime + " min";
-            } else {
+
+            } else { // CANCELLED
+                if (job.getStartTime() != null) {
+                    wait = minutesBetween(job.getSubmissionTime(), job.getStartTime()) + " min";
+                }
                 finish = formatTime(job.getCancellationTime());
                 result = "Cancelled: " + job.getCancellationReason();
             }
 
-            rows.add(new String[] {"" + job.getJobId(),job.getTitle(),job.getApplicationName(),"" + job.getStatus(), gpu, 
-            		start, finish, wait,result});
+            rows.add(new String[] {"" + job.getJobId(),job.getTitle(),job.getApplicationName(),"" + job.getStatus(),
+                gpu,start,finish,wait,result});
         }
 
         return rows.toArray(new String[rows.size()][]);
     }
 
     public static String utilization(ArrayList<Job> jobs, Scheduler scheduler, LocalDateTime simulationStart) {
-
         if (scheduler == null || simulationStart == null) {return "N/A";}
         LocalDateTime simulation = scheduler.getSimulationTime();
         long elapsed = minutesBetween(simulationStart, simulation);
