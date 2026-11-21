@@ -448,4 +448,55 @@ public class Scheduler {
 
         return start.plusMinutes(job.getDuration());
     }
+	    public boolean restoreSavedJob(
+            Job job,
+            JobStatus savedStatus,
+            Integer gpuId,
+            LocalDateTime startTime,
+            LocalDateTime finishTime,
+            LocalDateTime cancellationTime,
+            String cancelledBy,
+            String reason) {
+
+        if (job == null || savedStatus == null) {
+            return false;
+        }
+
+        for (Job savedJob : allJobs) {
+            if (savedJob.getJobId() == job.getJobId()) {
+                return false;
+            }
+        }
+
+        if (savedStatus == JobStatus.QUEUED) {
+            waitingQueue.add(job);
+        } else if (savedStatus == JobStatus.RUNNING) {
+            if (gpuId == null || gpuId < 1 || gpuId > gpus.length || !gpus[gpuId - 1].isAvailable() || startTime == null) {
+                return false;
+            }
+
+            job.startJob(gpuId, startTime);
+            gpus[gpuId - 1].assignJob(job);
+        } else if (savedStatus == JobStatus.COMPLETED) {
+            if (gpuId == null || startTime == null || finishTime == null) {
+                return false;
+            }
+
+            job.startJob(gpuId, startTime);
+            job.completeJob(finishTime);
+        } else if (savedStatus == JobStatus.CANCELLED) {
+            if (startTime != null && gpuId != null) {
+                job.startJob(gpuId, startTime);
+            }
+            job.cancelJob(cancellationTime, cancelledBy, reason);
+        }
+
+        allJobs.add(job);
+
+        if (job.getJobId() >= nextJobId) {
+            nextJobId = job.getJobId() + 1;
+        }
+
+        return true;
+    }
 }
