@@ -1,4 +1,4 @@
-package gpu.scheduling;
+package gpumanagement;
 
 import java.time.LocalDateTime;
 
@@ -36,16 +36,16 @@ public class Job {
 	    applicationName = appname;
 	    description = desc;
 	    this.taskSize = taskSize;
-	    this.workloadUnits = taskSize.getDuration();
-	    this.estimatedDuration = taskSize.getDuration();
+	    workloadUnits = taskSize.getDuration();
+	    estimatedDuration = taskSize.getDuration();
 	    this.submissionTime = submissionTime;
-	    this.status = JobStatus.QUEUED;
-	    this.assignedGpuId = null;
-	    this.startTime = null;
-	    this.finishTime = null;
-	    this.cancellationTime = null;
-	    this.cancelledBy = null;
-	    this.cancellationReason = null;
+	    status = JobStatus.QUEUED;
+	    assignedGpuId = null;
+	    startTime = null;
+	    finishTime = null;
+	    cancellationTime = null;
+	    cancelledBy = null;
+	    cancellationReason = null;
 	}
 	
 
@@ -119,21 +119,35 @@ public class Job {
 
 
 	public void startJob(int gpuId, LocalDateTime time) {
-		this.assignedGpuId = gpuId;
-		this.startTime = time;
-		this.status = JobStatus.RUNNING;
+		if (status != JobStatus.QUEUED) {
+	        return;
+	    }
+		assignedGpuId = gpuId;
+		startTime = time;
+		status = JobStatus.RUNNING;
 	}
 	
 	public void completeJob(LocalDateTime time) {
-		this.finishTime = time;
-		this.status = JobStatus.COMPLETED;
+		if (status != JobStatus.RUNNING) {
+	        return;
+	    }
+		finishTime = time;
+		status = JobStatus.COMPLETED;
 	}
 	
 	public void cancelJob(LocalDateTime time, String cancelledBy, String reason) {
-		this.cancellationTime = time;
+		if (status != JobStatus.QUEUED && status != JobStatus.RUNNING) {
+		        return;
+		    }
+
+		    if (status == JobStatus.RUNNING) {
+		        finishTime = time;
+		    }
+		
+		cancellationTime = time;
 		this.cancelledBy = cancelledBy;
-		this.cancellationReason = reason;
-		this.status = JobStatus.CANCELLED;
+		cancellationReason = reason;
+		status = JobStatus.CANCELLED;
 	}
 
 	@Override

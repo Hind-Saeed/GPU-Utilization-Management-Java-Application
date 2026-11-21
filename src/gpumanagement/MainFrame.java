@@ -1,10 +1,9 @@
 package gpumanagement;
-
+import java.time.LocalDateTime;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
-import gpu.scheduling.Scheduler;
 
 public class MainFrame extends ScreenFormat implements ActionListener {
 	
