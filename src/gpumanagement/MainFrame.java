@@ -1,7 +1,9 @@
 package gpumanagement;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 
 public class MainFrame extends ScreenFormat implements ActionListener {
 	
@@ -11,40 +13,19 @@ public class MainFrame extends ScreenFormat implements ActionListener {
     
     // student registration
     private JTextField id, name, email, phone, password;
-
-	protected static AccountService accountService = new AccountService();
-    // protected static Scheduler scheduler = new Scheduler(accountService);
+    
+    protected static AccountService accountService = new AccountService();
+    protected static ArrayList<Student> approvedStudents = new ArrayList<>();
+    protected static Scheduler scheduler;
     
     // default constructor to set title and size
     public MainFrame() {
         setTitle("GPU Utilization Management");
-        setSize(1000, 650);
+        setSize(1300, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         loginPage();
         setVisible(true);
-    }
-    
-    // method to clear the screen and move to the next screen
-    public void clearScreen(int rows, int columns) {
-        getContentPane().removeAll();
-        getContentPane().setBackground(Color.WHITE);
-        setLayout(new GridLayout(rows, columns, 10, 10));
-    }
-    
-    // updates the screen with the new changes
-    public void refreshScreen() {
-        validate();
-        repaint();
-    }
-    
-    // method to standardize buttons
-    public JButton makeButton(String text) {
-        JButton button = new JButton(text);
-        button.setBackground(Color.PINK);
-        button.setOpaque(true);
-        button.setContentAreaFilled(true);
-        return button;
     }
     
     // log in screen format
@@ -134,29 +115,41 @@ public class MainFrame extends ScreenFormat implements ActionListener {
     }
     
     // Connect with member 1 (user)
-    public boolean studentLoginIsValid(String universityID, String password) {
-        return false;
+    public Student studentLogin(String universityID, String password) {
+        for (Student s : approvedStudents) {
+            if (s.getUniversityId().equals(universityID) && s.passwordMatches(password)) {
+                return s;
+            }
+        }
+        return null;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
     	if (e.getSource() == login) {
-            String username = usernameField.getText();
-            String password = passwordField.getText();
+    	    String username = usernameField.getText();
+    	    String password = passwordField.getText();
+    	    Student loggedIn = studentLogin(username, password);   // null if no match
 
-            if (username.equals("admin") && password.equals("gpu2026")) {
-            	JOptionPane.showMessageDialog(this, "Admin login successful.");
-                
-            } 
-            else if (studentLoginIsValid(username, password)) {
-            	JOptionPane.showMessageDialog(this, "Student login successful.");
-                
-            } 
-            else {
-                JOptionPane.showMessageDialog(this, "Invalid username/password or account not approved.");
-            }
+    	    if (username.equals("admin") && password.equals("gpu2026")) {
+    	        new AdminFrame();
+    	        dispose();
+    	    }
+    	    else if (loggedIn != null) {
+    	        new StudentFrame(loggedIn);
+    	        dispose();
+    	    }
+    	    else if (username.equals("student") && password.equals("1234")) {
+    	        // demo Student to allow updates.
+    	    	Student demoStudent = new Student("S001", "Demo Student", "demo@example.com","0500000000","demoPassword", new TimeAllowance(100));
 
-        } 
+    	        new StudentFrame(demoStudent);
+    	        dispose();
+    	    }
+    	    else {
+    	        JOptionPane.showMessageDialog(this, "Invalid username/password or account not approved.");
+    	    }
+    	} 
         else if (e.getSource() == register) {
             registerPage();
 
