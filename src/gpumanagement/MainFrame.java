@@ -11,6 +11,9 @@ public class MainFrame extends ScreenFormat implements ActionListener {
     
     // student registration
     private JTextField id, name, email, phone, password;
+
+	protected static AccountService accountService = new AccountService();
+    // protected static Scheduler scheduler = new Scheduler(accountService);
     
     // default constructor to set title and size
     public MainFrame() {
