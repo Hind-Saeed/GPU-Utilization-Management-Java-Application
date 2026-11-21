@@ -9,6 +9,7 @@ import java.util.Map;
 public class AccountService {
     private final Map<String, Student> students = new LinkedHashMap<>();
     private final List<AccessRequest> requests = new ArrayList<>();
+    private final List<AllowanceGrant> allowanceGrants = new ArrayList<>();
     private final Administrator administrator = new Administrator();
 
     public AccessRequest registerStudent(String universityId, String name,String email, String phone, String password) {
@@ -107,7 +108,33 @@ public class AccountService {
 
         return null;
     }
+    public void grantAdditionalTime(String studentId, int minutes, String reason, User grantedBy) {
+    	if (!(grantedBy instanceof Administrator)) {
+            throw new SecurityException("Only an administrator can grant time.");
+        }
 
+        requireText(studentId, "Student ID");
+        requireText(reason, "Reason");
+
+        if (minutes <= 0) {
+            throw new IllegalArgumentException("Granted minutes must be positive.");
+        }
+
+        String id = studentId.trim();
+        Student student = students.get(id);
+
+        if (student == null) {
+            throw new IllegalArgumentException("No approved student exists with this ID.");
+        }
+
+        student.getAllowance().grantMinutes(minutes);
+
+        allowanceGrants.add(new AllowanceGrant(id, minutes, reason.trim(), grantedBy.getUsername()));
+    }
+
+    public List<AllowanceGrant> getAllowanceGrants() {
+        return Collections.unmodifiableList(new ArrayList<>(allowanceGrants));
+    }
     private boolean hasPendingRequest(String universityId) {
         for (AccessRequest request : requests) {
             if (request.isPending()
