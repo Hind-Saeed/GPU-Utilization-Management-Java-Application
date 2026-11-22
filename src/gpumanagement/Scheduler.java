@@ -376,9 +376,14 @@ public class Scheduler {
 
         return null;
     }
-    //how effectively the GPUs are being used
+    
+ // Calculates the percentage of available GPU time spent executing jobs.
     public double getUtilization() {
-        long elapsed = Duration.between(initialSimulationTime, simulationTime).toMinutes();   //how long the simulation has been running
+
+        // Calculate how many minutes have passed since the simulation started.
+        long elapsed = Duration.between(
+            initialSimulationTime, simulationTime
+        ).toMinutes();
 
         if (elapsed <= 0) {
             return Double.NaN;
@@ -391,7 +396,8 @@ public class Scheduler {
                 continue;
             }
 
-            LocalDateTime end = null;      //the end of the execution time being counted
+         // Stores the end of the execution interval being counted.
+            LocalDateTime end = null;
 
             if (job.getStatus() == JobStatus.RUNNING) {
                 end = simulationTime;
@@ -402,8 +408,12 @@ public class Scheduler {
             }
 
             if (end != null) {
-                long jobMinutes = Duration.between(job.getStartTime(), end).toMinutes();
-                busyMinutes += Math.max(0, jobMinutes);     //add the execution time to the total
+
+                long jobMinutes =
+                    Duration.between(job.getStartTime(), end).toMinutes();
+
+                // Add this job's non-negative execution time to the total.
+                busyMinutes += Math.max(0, jobMinutes);
             }
         }
 
@@ -435,24 +445,24 @@ public class Scheduler {
             return null;
         }
 
-        if (job.getFinishTime() != null) {       //return the recorded finish time if one exists
+        if (job.getFinishTime() != null) {
             return job.getFinishTime();
         }
 
-        if (job.getStatus() == JobStatus.CANCELLED) {     //job got cancelled
+        if (job.getStatus() == JobStatus.CANCELLED) {
             return null;
         }
 
-        LocalDateTime start = getPredictedStartTime(job);   
+        LocalDateTime start = getPredictedStartTime(job);
 
         if (start == null) {
             return null;
         }
 
-        return start.plusMinutes(job.getDuration());      //prediction for a job in the queue
+        return start.plusMinutes(job.getDuration());
     }
-    
-    //restore the jobs history after closing the application
+
+    // Restore saved job history after restarting the application.
     public boolean restoreSavedJob(
             Job job,
             JobStatus savedStatus,

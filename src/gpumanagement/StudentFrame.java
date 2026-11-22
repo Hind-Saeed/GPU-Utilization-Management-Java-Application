@@ -183,7 +183,7 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
         refreshScreen();
     }
     
-    private void selectSize(int i) {
+    private void selectSize(int i) { //Show duration and set the size chosen
         if (i == 0) {selectedSize = TaskSize.SMALL;} 
         else if (i == 1) {selectedSize = TaskSize.MEDIUM;} 
         else if (i == 2) {selectedSize = TaskSize.LARGE;} 
@@ -191,7 +191,7 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
         durationLabel.setText("Duration: " + selectedSize.getDuration() + " minutes");
     }
 
-    private void submitJob() {
+    private void submitJob() { 
         String title = titleField.getText().trim();
         String application = applicationField.getText().trim();
         String description = descriptionField.getText().trim();
@@ -206,8 +206,8 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
             JOptionPane.showMessageDialog(this, "The simulation clock has not been set yet.");
             return;
         }
-
-        Job job = scheduler.submitJob(student.getUniversityId(),title, application, description, selectedSize);
+        
+        Job job = scheduler.submitJob(student.getUniversityId(),title, application, description, selectedSize); //submit using scheduler
 
         if (job == null) {
             JOptionPane.showMessageDialog(this,"The job could not be submitted. Check the student's available GPU minutes and registered allowance.");
@@ -261,7 +261,7 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
             return;
         }
 
-        boolean success = scheduler.cancelJob(requestedId, student.getUniversityId(), reason);
+        boolean success = scheduler.cancelJob(requestedId, student.getUniversityId(), reason); //cancel job through scheduler
 
         if (success) {
             JOptionPane.showMessageDialog(this, "Job cancelled.");

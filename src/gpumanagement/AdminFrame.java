@@ -1,5 +1,6 @@
 package gpumanagement;
 import java.util.*;
+import java.util.List;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -17,7 +18,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
 	private JButton setTime, advance, allowance, search, requests, quedB, cancelB, completedB, canceledB, save, logoutB, backB;
 	private JButton setStartB, findStudentB, grantTimeB;
 	private JButton viewStudentJobsB, findCancelJobB;
-	private JButton[] approveButtons, rejectButtons;
+	private JButton[] approveButtons, rejectButtons; //array of approve & reject buttons for each request
 	private JButton[] cancelButtons;
 	
 	private JSpinner startDate, startTime;
@@ -26,23 +27,21 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
     private JTextField cancelStudentIdField;
     private JTextField[] allowanceFields;
 
-
     private String selectedStudentId;
-    private String[][] pendingRequests = new String[0][5];
-    private String[][] cancellableJobRows = new String[0][4];
+    private String[][] pendingRequests = new String[0][5]; //id, name, email, phone, password
+    private String[][] cancellableJobRows = new String[0][4]; //student id, job id, application, status
     
+	// implementing other classes
     private Scheduler scheduler;
     private final AccountService accountService;
     private final User currentUser;
-    
     private Student selectedStudent;
     private Storage fileStorage;
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-
     private String fmt(LocalDateTime t) {return t == null ? "--" : t.format(FMT);}
-
-    private String clockText() {
+	
+    private String clockText() { // Set simulation time
         if (scheduler == null) {
         	return "Not set";
         }
@@ -54,7 +53,6 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         this.scheduler = scheduler;
         this.accountService = accountService;
         this.currentUser = currentUser;
-
         setTitle("Administration");
         setSize(1000, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -75,8 +73,8 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         queued = new JLabel("Queued: " + JobRows.count(jobs, JobStatus.QUEUED), JLabel.CENTER);
         completed = new JLabel("Completed: " + JobRows.count(jobs, JobStatus.COMPLETED),JLabel.CENTER);
         cancelled = new JLabel("Cancelled: " + JobRows.count(jobs, JobStatus.CANCELLED), JLabel.CENTER);
-        utilization = new JLabel("Utilization: " + JobRows.utilization(jobs, MainFrame.scheduler,MainFrame.simulationStart), JLabel.CENTER);
-
+        utilization = new JLabel("Utilization: " + JobRows.utilization(MainFrame.scheduler), JLabel.CENTER);
+        
         setTime = makeButton("Set simulation time");
         advance = makeButton("Advance: +1 min");
         allowance = makeButton("Student Allowance");
@@ -109,12 +107,12 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         setTime.setEnabled(scheduler == null);
         advance.setEnabled(scheduler != null);
 
-        String[][] gpuInfo = JobRows.gpus(jobs, MainFrame.scheduler);
+        String[][] gpuInfo = JobRows.gpus(jobs, MainFrame.scheduler); //pass scheduler to get busy, remaining mintues, and finish time 
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) { // create label or fields for the information about the column
             for (int j = 0; j < 5; j++) {
                 if (j == 0) {
-                    gpusTable[i][j] = makeLabel(gpuInfo[i][j], Color.PINK, Color.BLACK);
+                    gpusTable[i][j] = makeLabel(gpuInfo[i][j], Color.PINK, Color.BLACK); 
                 } else {
                     gpusTable[i][j] = new JLabel(gpuInfo[i][j], JLabel.CENTER);
                 }
@@ -148,14 +146,14 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         refreshScreen();
     }
 
-    public void setTimePage() {
+    public void setTimePage() { //Setting simulation time using date picker
         clearScreen(4, 2);
 
-        startDate = new JSpinner(new SpinnerDateModel(new Date(), null, null, Calendar.DAY_OF_MONTH));
-        startDate.setEditor(new JSpinner.DateEditor(startDate, "dd/MM/yyyy"));
+        startDate = new JSpinner(new SpinnerDateModel(new Date(), null, null, Calendar.DAY_OF_MONTH)); //initalize date to today
+        startDate.setEditor(new JSpinner.DateEditor(startDate, "dd/MM/yyyy")); //format 
 
-        startTime = new JSpinner(new SpinnerDateModel(new Date(), null, null, Calendar.MINUTE));
-        startTime.setEditor(new JSpinner.DateEditor(startTime, "HH:mm"));
+        startTime = new JSpinner(new SpinnerDateModel(new Date(), null, null, Calendar.MINUTE)); //initialize time to now 
+        startTime.setEditor(new JSpinner.DateEditor(startTime, "HH:mm")); //format
 
         setStartB = makeButton("Set Start Time");
         backB = makeButton("Back to dashboard");
@@ -175,7 +173,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         refreshScreen();
     }
 
-    public void searchStudent() {
+    public void searchStudent() { //allow admin to search for students using their univeristy id
         clearScreen(0, 4);
 
         add(makeLabel("SEARCH STUDENT", Color.BLACK, Color.WHITE));
@@ -214,7 +212,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
    
         add(new JLabel(""));
         add(new JLabel("Minutes to add:"));
-        minutesField = new JTextField();
+        minutesField = new JTextField(); //Allows them to add minutes to the student
         add(minutesField);
 
         add(new JLabel("Reason:"));
@@ -237,10 +235,10 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         refreshScreen();
     }
 
-    public void regRequests() {
-        List<AccessRequest> list = accountService.getPendingRequests();
-        pendingRequests = new String[list.size()][5];
-        for (int i = 0; i < list.size(); i++) {
+    public void regRequests() { //Allows admin to view registration requests
+        List<AccessRequest> list = accountService.getPendingRequests(); //implemented from the class AccountService to view pending requests as a list
+        pendingRequests = new String[list.size()][5]; 
+        for (int i = 0; i < list.size(); i++) { //loop over list of requests
             AccessRequest req = list.get(i);
             pendingRequests[i][0] = req.getUniversityId();
             pendingRequests[i][1] = req.getName();
@@ -249,7 +247,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
             pendingRequests[i][4] = req.getPasswordForAccountCreation();
         }
 
-        allowanceFields = new JTextField[pendingRequests.length];
+        allowanceFields = new JTextField[pendingRequests.length]; //Default is 100 but the admin can edit it
         approveButtons = new JButton[pendingRequests.length];
         rejectButtons = new JButton[pendingRequests.length];
 
@@ -257,7 +255,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         add(makeLabel("REQUESTS", Color.BLACK, Color.WHITE));
         add(new JLabel("Pending: " + pendingRequests.length, JLabel.CENTER));
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 5; i++) { //blank space to move to the next row
             add(new JLabel(""));
         }
 
@@ -265,18 +263,18 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         add(backB);
         backB.addActionListener(this);
 
-        String[] headings = {"University ID", "Name", "Email", "Phone", "Password", "Allowance (min)", "Approve", "Reject"};
+        String[] headings = {"University ID", "Name", "Email", "Phone", "Password", "Allowance (min)", "Approve", "Reject"}; //Organize information labels
 
         for (int i = 0; i < headings.length; i++) {
             add(makeLabel(headings[i], Color.PINK, Color.BLACK));
         }
 
-        for (int i = 0; i < pendingRequests.length; i++) {
+        for (int i = 0; i < pendingRequests.length; i++) { //loop over pending requests to put the information in a tabular format
             for (int j = 0; j < 5; j++) {
                 add(new JLabel(pendingRequests[i][j], JLabel.CENTER));
             }
 
-            allowanceFields[i] = new JTextField("100");
+            allowanceFields[i] = new JTextField("100"); //default value 
             approveButtons[i] = makeButton("Approve");
             rejectButtons[i] = makeButton("Reject");
 
@@ -291,30 +289,30 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         refreshScreen();
     }
 
-    private void decision(int i, boolean approved) {
+    private void decision(int i, boolean approved) { //Handles action that happends if approve or reject is clicked
         String req = pendingRequests[i][0];
         try {
-            if (approved) {
-                int minutes = Integer.parseInt(allowanceFields[i].getText().trim());
-               
-                Student student = accountService.approveRequest(req, minutes);
+            if (approved) { // admin clicked approve
+                int minutes = Integer.parseInt(allowanceFields[i].getText().trim()); //assign allowance
+            
+                Student student = accountService.approveRequest(req, minutes); //create student
                 if (MainFrame.scheduler != null) {
-                    MainFrame.scheduler.registerAllowance(student.getUniversityId(),student.getAllowance());
+                    MainFrame.scheduler.registerAllowance(student.getUniversityId(),student.getAllowance()); //register with schedueler
                 }
 
-                JOptionPane.showMessageDialog(this, req + " approved with " + minutes + " minutes.");
-            } else {
+                JOptionPane.showMessageDialog(this, req + " approved with " + minutes + " minutes."); 
+            } else { //admin clicked reject
                 accountService.rejectRequest(req);
                 JOptionPane.showMessageDialog(this, req + " rejected.");
             }
         } catch (IllegalArgumentException | IllegalStateException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage());
+            JOptionPane.showMessageDialog(this, ex.getMessage()); //could be that the minutes are invalid or account is not pending
         }
 
         regRequests();
     }
 
-    private void cancelRow(int i) {
+    private void cancelRow(int i) { //handles job cancellation
         String studentId = cancellableJobRows[i][0];
         String jobIdText = cancellableJobRows[i][1];
         String reason = JOptionPane.showInputDialog(this, "Reason for cancelling job " + jobIdText + ":");
@@ -322,7 +320,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         if (reason == null) {return;}
         reason = reason.trim();
         if (reason.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "A reason is required.");
+            JOptionPane.showMessageDialog(this, "A reason is required."); 
             return;
         }
 
@@ -339,8 +337,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
             return;
         }
 
-        boolean success = MainFrame.scheduler.cancelJob(jobId, "admin", reason);
-
+        boolean success = MainFrame.scheduler.cancelJob(jobId, "admin", reason); //Call the cancelling method from schedueler to officially cancel
         if (success) {
             JOptionPane.showMessageDialog(this, "Job cancelled.");
             cancelJobs(studentId,JobRows.cancellable(currentJobs(), studentId));
@@ -349,28 +346,28 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         }
     }
 
-    private void showTable(String title, String[] headings, String[][] rows, String empty) {
+    private void showTable(String title, String[] headings, String[][] rows, String empty) {//some buttons had the same screen format - method to easily execute
         int cols = headings.length;
         clearScreen(0, cols);
 
         add(makeLabel(title, Color.BLACK, Color.WHITE));
-        for (int i = 0; i < cols - 2; i++) {
+        for (int i = 0; i < cols - 2; i++) { //title
             add(new JLabel(""));
         }
 
         backB = makeButton("Back to dashboard");
         add(backB);
 
-        for (int i = 0; i < cols; i++) {
+        for (int i = 0; i < cols; i++) { //headings
             add(makeLabel(headings[i], Color.PINK, Color.BLACK));
         }
 
-        if (rows == null || rows.length == 0) {
+        if (rows == null || rows.length == 0) { //when there's no data, prints the message
             add(new JLabel(empty, JLabel.CENTER));
             for (int i = 1; i < cols; i++) {
                 add(new JLabel(""));
             }
-        } else {
+        } else { //acutal data in rows
             for (int i = 0; i < rows.length; i++) {
                 for (int j = 0; j < cols; j++) {
                     add(new JLabel(rows[i][j], JLabel.CENTER));
@@ -381,7 +378,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         backB.addActionListener(this);
         refreshScreen();
     }
-
+	//View Student Allowance, Que, Completed, and Cancelled Jobs
     public void studentAllowance(String[][] rows) {
         showTable("STUDENT ALLOWANCE",new String[]{"Student", "Allocated", "Used", "Reserved", "Available"},
                 rows, "No students yet");
@@ -398,12 +395,12 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
                 rows, "No completed jobs.");
     }
 
-    public void cancelledJobs(String[][] rows) {
+    public void cancelledJobs(String[][] rows) { //record of cancelled jobs
         showTable("CANCELLED JOBS", new String[]{"Job", "Student", "Status when cancelled","Application", "Reason"},
                 rows, "No cancelled jobs.");
     }
 
-    public void cancelJobs(String studentId, String[][] rows) {
+    public void cancelJobs(String studentId, String[][] rows) { // Job cancelling page
         cancellableJobRows = (rows == null) ? new String[0][4] : rows;
         cancelButtons = new JButton[cancellableJobRows.length];
 
@@ -431,14 +428,14 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         add(makeLabel("Status", Color.PINK, Color.BLACK));
         add(new JLabel(""));
 
-        if (cancellableJobRows.length == 0) {
+        if (cancellableJobRows.length == 0) { // jobs aren't running or queued
             add(new JLabel("No queued or running jobs", JLabel.CENTER));
             for (int i = 0; i < 4; i++) {
                 add(new JLabel(""));
             }
         } else {
             for (int i = 0; i < cancellableJobRows.length; i++) {
-                for (int j = 0; j < 4; j++) {
+                for (int j = 0; j < 4; j++) { //display the values of the job
                     add(new JLabel(cancellableJobRows[i][j], JLabel.CENTER));
                 }
 
@@ -453,11 +450,12 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         refreshScreen();
     }
 
-    public void storage() {
+    public void storage() { //for saving and restoring data
         try {
-            fileStorage = new Storage();
+            fileStorage = new Storage(); 
             List<Student> students = allStudents();
-
+			
+			//Get all data about students
             String[][] accounts = new String[students.size()][5];
             String[][] allowances = new String[students.size()][4];
             for (int i = 0; i < students.size(); i++) {
@@ -466,7 +464,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
                 accounts[i] = new String[]{s.getUniversityId(), s.getName(), s.getEmail(), s.getPhone(), s.passwordForStorage()};
                 allowances[i] = new String[]{s.getUniversityId(), "" + a.getAllocatedMinutes(), "" + a.getUsedMinutes(),"" + a.getReservedMinutes()};
             }
-
+			//Get all requests made
             List<AccessRequest> requestList = accountService.getAllRequests();
             String[][] requests = new String[requestList.size()][6];
             for (int i = 0; i < requestList.size(); i++) {
@@ -474,7 +472,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
                 requests[i] = new String[]{r.getUniversityId(), r.getName(), r.getEmail(), r.getPhone(), r.getPasswordForAccountCreation(),
                 		r.getStatus().toString()};
             }
-
+			//Get all the information about students that were granted time
             List<AllowanceGrant> grantList = accountService.getAllowanceGrants();
             String[][] grants = new String[grantList.size()][4];
             for (int i = 0; i < grantList.size(); i++) {
@@ -482,13 +480,14 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
                 grants[i] = new String[]{g.getStudentId(), "" + g.getMinutes(), g.getReason(), g.getAdministratorUsername()};
             }
 
+			//Get all jobs that are currently running 
             ArrayList<Job> allJobs = currentJobs();
             String[][] jobRows = new String[allJobs.size()][14];
             ArrayList<String[]> cancellationList = new ArrayList<>();
             ArrayList<String[]> assignmentList = new ArrayList<>();
             for (int i = 0; i < allJobs.size(); i++) {
-                Job j = allJobs.get(i);
-                String gpuId = j.getAssignedGpuId() == null ? "" : "" + j.getAssignedGpuId();
+                Job j = allJobs.get(i); //for each job
+                String gpuId = j.getAssignedGpuId() == null ? "" : "" + j.getAssignedGpuId(); //get GPU assignment if it exists
                 jobRows[i] = new String[]{"" + j.getJobId(), j.getStudentId(),
                         j.getTitle(), j.getApplicationName(), j.getDescription(),
                         j.getTaskSize().toString(), j.getSubmissionTime().toString(),
@@ -496,7 +495,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
                         dateText(j.getFinishTime()), dateText(j.getCancellationTime()),
                         safeText(j.getCancelledBy()), safeText(j.getCancellationReason())};
 
-                if (j.getStatus() == JobStatus.CANCELLED) {
+                if (j.getStatus() == JobStatus.CANCELLED) { //get when the job was cancelled
                     String priorStatus = j.getStartTime() == null ? "QUEUED" : "RUNNING";
                     cancellationList.add(new String[]{"" + j.getJobId(), j.getStudentId(),
                             priorStatus, j.getApplicationName(), safeText(j.getCancellationReason()),
@@ -511,6 +510,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
             String[][] assignments = assignmentList.toArray(new String[assignmentList.size()][]);
             String clockValue = scheduler == null ? "Not set" : scheduler.getSimulationTime().toString();
             String startValue = MainFrame.simulationStart == null? "Not set" : MainFrame.simulationStart.toString();
+			
             fileStorage.saveInFile(clockValue, startValue, accounts, requests, allowances, grants, jobRows, cancellations, assignments);
             JOptionPane.showMessageDialog(this, "Data saved.");
         } catch (Exception ex) {
@@ -519,24 +519,24 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
     }
     
     private String dateText(LocalDateTime value) {
-        return value == null ? "" : value.toString();
+        return value == null ? "" : value.toString(); //LocalDateTime that can be parsed
     }
 
     private String safeText(String value) {
-        return value == null ? "" : value;
+        return value == null ? "" : value; //handle problems that may arise from null
     }
 
-    private List<Student> allStudents() {
-        return accountService.getStudents(currentUser);
+    private List<Student> allStudents() { //Registered students
+        return accountService.getStudents(currentUser); 
     }
 
-    private Student findStudentById(String id) {
+    private Student findStudentById(String id) { //search list of student
         for (Student s : allStudents()) {
             if (s.getUniversityId().equals(id)) return s;
         }
         return null;
     }
-    private ArrayList<Job> currentJobs() {
+    private ArrayList<Job> currentJobs() { //Submitted Jobs
         if (MainFrame.scheduler == null) {
             return new ArrayList<Job>();
         }
@@ -546,19 +546,19 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (approveButtons != null) {
+        
+		if (approveButtons != null) { 
             for (int i = 0; i < approveButtons.length; i++) {
-                if (e.getSource() == approveButtons[i]) {
+                if (e.getSource() == approveButtons[i]) { //approved
                     decision(i, true);
                     return;
                 }
-                if (e.getSource() == rejectButtons[i]) {
+                if (e.getSource() == rejectButtons[i]) { //rejected
                     decision(i, false);
                     return;
                 }
             }
         }
-
         if (cancelButtons != null) {
             for (int i = 0; i < cancelButtons.length; i++) {
                 if (e.getSource() == cancelButtons[i]) {
@@ -579,42 +579,40 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
             } else {
                 JOptionPane.showMessageDialog(this, "The start time is already set.");
             }
-        } else if (e.getSource() == setStartB) {
+        } else if (e.getSource() == setStartB) { //Connect everything after time has been set
             try {
-                startDate.commitEdit();
-                startTime.commitEdit();
+                startDate.commitEdit(); //apply data
+                startTime.commitEdit(); //apply time
 
-                Calendar selectedDate = Calendar.getInstance();
+                Calendar selectedDate = Calendar.getInstance();  //get selected data
                 selectedDate.setTime((Date) startDate.getValue());
-
                 Calendar selectedTime = Calendar.getInstance();
                 selectedTime.setTime((Date) startTime.getValue());
 
                 selectedDate.set(Calendar.HOUR_OF_DAY, selectedTime.get(Calendar.HOUR_OF_DAY));
                 selectedDate.set(Calendar.MINUTE,selectedTime.get(Calendar.MINUTE));
-                selectedDate.set(Calendar.SECOND, 0);
+                selectedDate.set(Calendar.SECOND, 0); //start time from the starting second
                 selectedDate.set(Calendar.MILLISECOND, 0);
 
                 if (scheduler != null) {
-                    JOptionPane.showMessageDialog(this, "The start time is already set.");
+                    JOptionPane.showMessageDialog(this, "The start time is already set."); //can only be set once
                     return;
                 }
 
-                LocalDateTime selectedStartTime = LocalDateTime.ofInstant(selectedDate.getTime().toInstant(), ZoneId.systemDefault());
-                MainFrame.simulationStart = selectedStartTime;
+                LocalDateTime selectedStartTime = LocalDateTime.ofInstant(selectedDate.getTime().toInstant(), ZoneId.systemDefault()); //get start time
+                MainFrame.simulationStart = selectedStartTime; //link to scheduler
                 MainFrame.scheduler = new Scheduler(selectedStartTime);
                 scheduler = MainFrame.scheduler;
-                for (Student student : allStudents()) {
+                for (Student student : allStudents()) { //registers student allowance 
                     MainFrame.scheduler.registerAllowance(student.getUniversityId(),student.getAllowance());
                 }
-                adminPage();
+                adminPage(); //go back to adminPage after setting
             } catch (ParseException ex) {
                 JOptionPane.showMessageDialog(this, "Enter a valid date and time.");
             }
-        } else if (e.getSource() == allowance) {
-            List<Student> list = allStudents();
+        } else if (e.getSource() == allowance) { 
+            List<Student> list = allStudents(); //get all student allowance details and details
             String[][] rows = new String[list.size()][5];
-
             for (int i = 0; i < list.size(); i++) {
                 Student s = list.get(i);
                 TimeAllowance a = s.getAllowance();
@@ -625,28 +623,27 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
                 rows[i][4] = "" + a.getAvailableMinutes();
             }
 
-            studentAllowance(rows);
+            studentAllowance(rows); //pass to student allowance to be displayed
         } else if (e.getSource() == search) {
             searchStudent();
-        } else if (e.getSource() == findStudentB) {
+        } else if (e.getSource() == findStudentB) { //when admin clicks search
             String studentId = studentIdField.getText().trim();
             selectedStudent = findStudentById(studentId);
             viewStudentJobsB.setEnabled(false);
 
-            if (selectedStudent == null) {
+            if (selectedStudent == null) { //no student found
                 selectedStudentId = null;
                 student.setText("Student not found");
                 jobs.setText("--");
                 balance.setText("--");
                 available.setText("--");
-                grantTimeB.setEnabled(false);
+                grantTimeB.setEnabled(false); //stay disabled
             } else {
                 selectedStudentId = selectedStudent.getUniversityId();
                 TimeAllowance a = selectedStudent.getAllowance();
-
                 student.setText(selectedStudent.getName() + " (" + selectedStudentId + ")");
                 int jobCount = 0;
-                for (Job job : currentJobs()) {
+                for (Job job : currentJobs()) { //count that student's jobs
                     if (job.getStudentId().equals(selectedStudentId)) {
                     	jobCount++;
                     }
@@ -654,15 +651,14 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
                 jobs.setText("" + jobCount);
                 balance.setText(a.getAllocatedMinutes() + " min allocated");
                 available.setText(a.getAvailableMinutes() + " min");
-                grantTimeB.setEnabled(true);
+                grantTimeB.setEnabled(true); //enable
             }
-            viewStudentJobsB.setEnabled(selectedStudent != null);
-            }
-            else if (e.getSource() == viewStudentJobsB && selectedStudent != null) {
-                String[] headings = {"Job ID", "Title", "Application", "Status", "GPU", "Predicted start", "Predicted finish", "Wait", "Result"};
-                String[][] rows = JobRows.studentRows(currentJobs(), selectedStudent.getUniversityId(), MainFrame.scheduler);
-                showTable("JOBS FOR " + selectedStudent.getUniversityId(), headings, rows, "No jobs for this student.");
-            }
+            viewStudentJobsB.setEnabled(selectedStudent != null); //enable
+		} else if (e.getSource() == viewStudentJobsB && selectedStudent != null) { //view the student's jobs
+			String[] headings = {"Job ID", "Title", "Application", "Status", "GPU", "Predicted start", "Predicted finish", "Wait", "Result"};
+			String[][] rows = JobRows.studentRows(currentJobs(), selectedStudent.getUniversityId(), MainFrame.scheduler);
+			showTable("JOBS FOR " + selectedStudent.getUniversityId(), headings, rows, "No jobs for this student.");
+		}
         else if (e.getSource() == grantTimeB) {
             String minutesText = minutesField.getText().trim();
             String reason = reasonField.getText().trim();
@@ -674,8 +670,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
             } else {
                 try {
                     int minutes = Integer.parseInt(minutesText);
-                    if (minutes <= 0) {
-                        JOptionPane.showMessageDialog(this, "Minutes must be greater than 0.");
+                    if (minutes <= 0) {JOptionPane.showMessageDialog(this, "Minutes must be greater than 0.");
                     } else {
                     	try {
                     	    accountService.grantAdditionalTime(selectedStudentId, minutes, reason, currentUser);

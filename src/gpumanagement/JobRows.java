@@ -4,6 +4,8 @@ import java.time.*;
 import java.time.format.*;
 import java.util.*;
 
+//This class reads job records and get data from scheduler.  
+// We run it as text rows in AdminFrame and StudentFrame to remove data calculations from those frames' codes.
 public class JobRows {
     
 	private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -12,19 +14,19 @@ public class JobRows {
         return time.format(FORMAT);
     }
 
-    private static long minutesBetween(LocalDateTime start, LocalDateTime end) {
+    private static long minutesBetween(LocalDateTime start, LocalDateTime end) { //duration
         return Duration.between(start, end).toMinutes();
     }
 
-    public static int count(ArrayList<Job> jobs, JobStatus status) {
+    public static int count(ArrayList<Job> jobs, JobStatus status) { 
         int total = 0;
-        for (Job job : jobs) {
+        for (Job job : jobs) { // count jobs in each status
             if (job.getStatus() == status) {total++;}
         }
         return total;
     }
     
-    public static String[][] gpus(ArrayList<Job> jobs, Scheduler scheduler) {
+    public static String[][] gpus(ArrayList<Job> jobs, Scheduler scheduler) { //Build gpu table in AdminFrame
         String[][] rows = new String[4][5];
         for (int i = 0; i < 4; i++) {
             rows[i][0] = "GPU " + (i + 1);
@@ -34,17 +36,17 @@ public class JobRows {
             rows[i][4] = "--";
         }
 
-        if (scheduler == null) { return rows;}
+        if (scheduler == null) { return rows;} 
 
         LocalDateTime now = scheduler.getSimulationTime();
         for (Job job : jobs) {
             if (job.getStatus() == JobStatus.RUNNING && job.getAssignedGpuId() != null) {
-                int row = job.getAssignedGpuId() - 1;
+                int row = job.getAssignedGpuId() - 1; //index
                 if (row >= 0 && row < 4) {
                     LocalDateTime finish = job.getStartTime().plusMinutes(job.getDuration());
                     rows[row][1] = "Busy";
                     rows[row][2] = "Job " + job.getJobId();
-                    rows[row][3] = Math.max(0, minutesBetween(now, finish)) + " min";
+                    rows[row][3] = Math.max(0, minutesBetween(now, finish)) + " min"; //remaining time
                     rows[row][4] = formatTime(finish);
                 }
             }
@@ -56,7 +58,6 @@ public class JobRows {
     public static String[][] queued(ArrayList<Job> jobs, Scheduler scheduler) {
         ArrayList<String[]> rows = new ArrayList<>();
         int position = 0;
-
         for (Job job : jobs) {
             if (job.getStatus() == JobStatus.QUEUED) {
                 position++;
@@ -72,16 +73,8 @@ public class JobRows {
                         waitText = wait + " min";
                     }
                 }
-                rows.add(new String[]{
-                    "" + job.getJobId(),
-                    job.getStudentId(),
-                    job.getApplicationName(),
-                    job.getDuration() + " min",
-                    "" + position,
-                    start,
-                    finish,
-                    waitText
-                });
+                rows.add(new String[]{"" + job.getJobId(), job.getStudentId(), job.getApplicationName(),
+                    job.getDuration() + " min", "" + position, start, finish, waitText});
             }
         }
         return rows.toArray(new String[rows.size()][]);
@@ -106,7 +99,7 @@ public class JobRows {
         for (Job job : jobs) {
             if (job.getStatus() == JobStatus.CANCELLED) {
                 String statusWhenCancelled = "Queued";
-                if (job.getStartTime() != null) {
+                if (job.getStartTime() != null) { //not in the que if we have a starting time
                     statusWhenCancelled = "Running";
                 }
                 rows.add(new String[] {"" + job.getJobId(), job.getStudentId(), statusWhenCancelled, job.getApplicationName(),job.getCancellationReason()});
@@ -127,7 +120,6 @@ public class JobRows {
                 rows.add(new String[] {job.getStudentId(), "" + job.getJobId(), job.getApplicationName(), "" + job.getStatus()});
             }
         }
-
         return rows.toArray(new String[rows.size()][]);
     }
 
@@ -136,9 +128,9 @@ public class JobRows {
         ArrayList<String[]> rows = new ArrayList<>();
         for (Job job : jobs) {
             if (!job.getStudentId().equals(studentId)) {
-                continue;
+                continue; //job doesn't belong to student
             }
-
+			
             String gpu = "--";
             if (job.getAssignedGpuId() != null) {gpu = "GPU " + job.getAssignedGpuId();}
 
@@ -184,25 +176,15 @@ public class JobRows {
         return rows.toArray(new String[rows.size()][]);
     }
 
-    public static String utilization(ArrayList<Job> jobs, Scheduler scheduler, LocalDateTime simulationStart) {
-        if (scheduler == null || simulationStart == null) {return "N/A";}
-        LocalDateTime simulation = scheduler.getSimulationTime();
-        long elapsed = minutesBetween(simulationStart, simulation);
-        if (elapsed <= 0) {return "N/A";}
-
-        long busy = 0;
-        for (Job job : jobs) {
-            if (job.getStartTime() != null) {
-                LocalDateTime end = simulation;
-                if (job.getStatus() == JobStatus.COMPLETED) {
-                    end = job.getFinishTime();
-                } else if (job.getStatus() == JobStatus.CANCELLED) {
-                    end = job.getCancellationTime();
-                }
-                busy += minutesBetween(job.getStartTime(), end);
-            }
+    public static String utilization(Scheduler scheduler) {
+        if (scheduler == null) {
+            return "N/A";
         }
-        double percent = busy * 100.0 / (4.0 * elapsed);
-        return String.format("%.1f%%", percent);
+        double percent = scheduler.getUtilization();
+
+        if (Double.isNaN(percent) || Double.isInfinite(percent)) {
+            return "N/A";
+        }
+        return String.format(java.util.Locale.US, "%.1f%%", percent);
     }
 }
