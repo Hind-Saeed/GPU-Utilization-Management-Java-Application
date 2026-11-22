@@ -17,11 +17,11 @@ public class GPU {
 		return currentJob;
 	}
 	
-	public boolean isAvailable() {
+	public boolean isAvailable() {                //check if the gpu is available
 		return currentJob == null;
 	}
 	
-	public boolean assignJob(Job job) {
+	public boolean assignJob(Job job) {           //assign job for the gpu
 		if (!isAvailable()||job==null) {
 			return false;
 		}
@@ -29,7 +29,7 @@ public class GPU {
 		return true;
 	}
 	
-	public void releaseJob() {
+	public void releaseJob() {              //release the gpu
 		currentJob = null;
 	}
 	
