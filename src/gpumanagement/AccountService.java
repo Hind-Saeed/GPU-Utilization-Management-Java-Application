@@ -1,10 +1,5 @@
 package gpumanagement;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class AccountService {
     private final Map<String, Student> students = new LinkedHashMap<>();
@@ -25,8 +20,7 @@ public class AccountService {
             throw new IllegalArgumentException("An account or pending request already uses this ID.");
         }
 
-        AccessRequest request = new AccessRequest(
-                id, name.trim(), email.trim(), phone.trim(), password);
+        AccessRequest request = new AccessRequest(id, name.trim(), email.trim(), phone.trim(), password);
         requests.add(request);
         return request;
     }
@@ -50,13 +44,11 @@ public class AccountService {
         requireText(universityId, "University ID");
 
         if (allocatedMinutes < 0) {
-            throw new IllegalArgumentException(
-                    "Allocated minutes cannot be negative.");
+            throw new IllegalArgumentException("Allocated minutes cannot be negative.");
         }
 
         String id = universityId.trim();
         AccessRequest request = findPendingRequest(id);
-
         Student student = new Student(
                 request.getUniversityId(),
                 request.getName(),
@@ -152,18 +144,20 @@ public class AccountService {
         }
         return false;
     }
-
+    
     private void requireText(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + " is required.");
         }
     }
+    
     public List<AccessRequest> getAllRequests() {
         return Collections.unmodifiableList(new ArrayList<>(requests));
     }
     public void restoreStudent(Student student) {
         students.put(student.getUniversityId(), student);
     }
+
     public void restoreRequest(AccessRequest request, AccessRequest.Status status) {
         request.restoreStatus(status);
         requests.add(request);

@@ -1,0 +1,32 @@
+GPU UTILIZATION MANAGEMENT - SAVED DATA
+Clock: 2026-11-23T03:21
+Simulation start: 2026-11-23T03:21
+
+[Accounts]
+University ID | Name | Email          | Phone      | Password
+66235         | hind | hind@gmail.com | 0545354959 | 1234    
+
+[Requests]
+University ID | Name | Email          | Phone      | Password | Status  
+66235         | hind | hind@gmail.com | 0545354959 | 1234     | APPROVED
+
+[Allowances]
+Student ID | Allocated | Used | Reserved
+66235      | 100       | 0    | 0       
+
+[Grants]
+Student ID | Minutes | Reason | Administrator
+(no records)
+
+[Jobs]
+Job ID | Student ID | Title | Application | Description | Size | Submitted | Status | GPU | Started | Finished | Cancelled at | Cancelled by | Reason
+(no records)
+
+[Cancellations]
+Job ID | Student ID | Status before cancellation | Application | Reason | Cancelled by | Cancellation time
+(no records)
+
+[GPU Assignments]
+GPU ID | Job ID
+(no records)
+

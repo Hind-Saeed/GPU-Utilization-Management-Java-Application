@@ -1,5 +1,6 @@
 package gpumanagement;
 import java.util.*;
+import gpumanagement.TimeAllowance;
 import java.time.*;
 
 public class Scheduler {
@@ -11,12 +12,15 @@ public class Scheduler {
     private ArrayList<Job> allJobs;
     private int nextJobId;
     private LocalDateTime initialSimulationTime;
-
-	//added these two constructors
-    public Scheduler(LocalDateTime startTime) { 
+    
+    public Scheduler(LocalDateTime startTime) {
         this(startTime, startTime);
     }
-    public Scheduler(LocalDateTime currentTime,LocalDateTime originalStartTime) {
+
+    public Scheduler(
+            LocalDateTime currentTime,
+            LocalDateTime originalStartTime) {
+
         waitingQueue = new LinkedList<>();
         gpus = new GPU[4];
 
@@ -46,19 +50,19 @@ public class Scheduler {
     public LocalDateTime getSimulationTime() {
         return simulationTime;
     }
-
+    
     public Job submitJob(String studentId, String title, String applicationName, String description, TaskSize size) {
     	
     	if (studentId == null || studentId.isBlank()
     	        || title == null || title.isBlank()
     	        || applicationName == null || applicationName.isBlank()
     	        || description == null || description.isBlank()
-    	        || size == null) {               //checks if the required info is not provided
+    	        || size == null) { //checks if the required info is not provided
 
     	    return null;
     	}
 
-        TimeAllowance allowance = studentAllowances.get(studentId);        //return the allowance connected to the studentId
+        TimeAllowance allowance = studentAllowances.get(studentId); //return the allowance connected to the studentId
 
         if (allowance == null) {
             return null;
@@ -66,7 +70,7 @@ public class Scheduler {
 
         int duration = size.getDuration();
 
-        if (!allowance.reserve(duration)) {     //check if there's enough allowance for the requested duration before creating the job
+        if (!allowance.reserve(duration)) { //check if there's enough allowance for the requested duration before creating the job
             return null;
         }
 
@@ -78,13 +82,13 @@ public class Scheduler {
         sortWaitingQueue();
         allJobs.add(job);
 
-        assignWaitingJobs();    //check if any of the 4 GPUs are available and assign if one is available otherwise it stays in the queue
+        assignWaitingJobs(); //check if any of the 4 GPUs are available and assign if one is available otherwise it stays in the queue
 
-        return job;         //return job to StudentFrame
+        return job; //return job to StudentFrame
     	
     }
     
-    private void sortWaitingQueue() {  //sort the queue according to the submission time, if 2 has the same time then compare by Id
+    private void sortWaitingQueue() { //sort the queue according to the submission time, if 2 has the same time then compare by Id
     	
     	ArrayList<Job> sorted = new ArrayList<>(waitingQueue);
 
@@ -111,7 +115,7 @@ public class Scheduler {
     }
 
     
-    public void registerAllowance(String studentId,TimeAllowance allowance) {        //register the student allowance passed from AdminFrame
+    public void registerAllowance(String studentId,TimeAllowance allowance) {  //register the student allowance passed from AdminFrame
         
     	if (studentId == null || allowance == null) {
             return;
@@ -128,14 +132,13 @@ public class Scheduler {
     }
     
     //allows the Scheduler to accept an existing queued Job object, validate it, reserve its GPU minutes, and add it to the scheduling system.
-    
     public boolean addJob(Job job) {
 
         if (job == null || job.getStatus() != JobStatus.QUEUED) {
             return false;
         }
 
-        for (Job existing : allJobs) {     //checking for duplicates
+        for (Job existing : allJobs) {
             if (existing == job || existing.getJobId() == job.getJobId()) {
                 return false;
             }
@@ -158,8 +161,8 @@ public class Scheduler {
         return true;
     }
 
-
-    public void assignWaitingJobs() {        //assign a job from the queue when a GPU becomes available
+  //assign a job from the queue when a GPU becomes available
+    public void assignWaitingJobs() {
 
         for (GPU gpu : gpus) {
 
@@ -180,14 +183,13 @@ public class Scheduler {
             }
         }
     }
-
     //advance the simulation time, check which jobs finish, update the allowances, release the GPUs, start waiting jobs
-    public void advanceTime(int min) { 
+    public void advanceTime(int min) {
 
         if (min <= 0) {
             return;
         }
-        assignWaitingJobs();  //assign before advancing if there's an available GPU
+        assignWaitingJobs();
         LocalDateTime targetTime = simulationTime.plusMinutes(min);
 
         while (true) {
@@ -244,7 +246,7 @@ public class Scheduler {
         simulationTime = targetTime;
         assignWaitingJobs();
     }
-
+    
     //predict the waiting time after submitting a job and got accepted
     public int predictWaitingTime(Job targetJob) {
 
@@ -252,10 +254,18 @@ public class Scheduler {
             return -1;
         }
 
-        int[] availableAt = new int[gpus.length];         //Stores how many minutes until each GPU becomes available.
+        int[] availableAt = new int[gpus.length]; //Stores how many minutes until each GPU becomes available.
 
         for (int i = 0; i < gpus.length; i++) {
-            availableAt[i] = getRemainingMinutes(gpus[i].getGPUId());
+
+            Job running = gpus[i].getCurrentJob();
+
+            if (running != null) {
+
+                LocalDateTime finish = running.getStartTime().plusMinutes(running.getDuration());
+
+                availableAt[i] = (int) Math.max(0,Duration.between(simulationTime, finish).toMinutes());
+            }
         }
 
         for (Job waiting : waitingQueue) {
@@ -264,17 +274,17 @@ public class Scheduler {
 
             for (int i = 1; i < availableAt.length; i++) {
 
-                if (availableAt[i] < availableAt[earliestGPU]) {    //compare the availability times of the 4 GPUs
+                if (availableAt[i] < availableAt[earliestGPU]) {  //compare the availability times of the 4 GPUs
                     earliestGPU = i;
                 }
             }
 
-            int wait = availableAt[earliestGPU];         //waiting time before the job can start
+            int wait = availableAt[earliestGPU];    //waiting time before the job can start
 
             if (waiting == targetJob) {
                 return wait;
             }
-            availableAt[earliestGPU] +=waiting.getDuration();    
+            availableAt[earliestGPU] +=waiting.getDuration();
         }
 
         return -1;
@@ -282,31 +292,30 @@ public class Scheduler {
     
     public boolean cancelJob(int jobId, String cancelledBy, String reason) {
     	
-    	Iterator<Job> iterator = waitingQueue.iterator();     //visit each job in the waiting queue in order
+    	Iterator<Job> iterator = waitingQueue.iterator();  //visit each job in the waiting queue in order
 
         while (iterator.hasNext()) {
 
             Job job = iterator.next();
 
-            if (job.getJobId() == jobId) {         //check if the current job id in the iterator = the requested job id
+            if (job.getJobId() == jobId) { //check if the current job id in the iterator = the requested job id
 
-                TimeAllowance allowance = studentAllowances.get(job.getStudentId());    //get the allowance of the student who requested the job
+                TimeAllowance allowance = studentAllowances.get(job.getStudentId()); //get the allowance of the student who requested the job
 
                 if (allowance == null) {
                     return false;
                 }
 
-                allowance.releaseReservation(job.getDuration());       //release reserved minutes without charging the student
+                allowance.releaseReservation(job.getDuration());
 
-                iterator.remove();     //remove the job from the waiting queue
+                iterator.remove();
 
-                job.cancelJob(simulationTime, cancelledBy, reason);     //record the cancellation and update
+                job.cancelJob(simulationTime, cancelledBy, reason);
 
                 return true;
             }
         }
     	
-        //Canceling a running job
     	for (GPU gpu : gpus) {
 
             Job job = gpu.getCurrentJob();
@@ -319,11 +328,11 @@ public class Scheduler {
                     return false;
                 }
 
-                int elapsed = (int) Duration.between(job.getStartTime(), simulationTime).toMinutes(); //how many minutes were already done
+                int elapsed = (int) Duration.between(job.getStartTime(), simulationTime).toMinutes();
 
-                elapsed = Math.max(0,Math.min(elapsed, job.getDuration()));    
+                elapsed = Math.max(0,Math.min(elapsed, job.getDuration()));
 
-                allowance.cancelRunningJob(job.getDuration(), elapsed);     //update the allowance through TimeAllowance
+                allowance.cancelRunningJob(job.getDuration(), elapsed);
 
                 job.cancelJob(simulationTime, cancelledBy, reason);
 
@@ -355,7 +364,7 @@ public class Scheduler {
             }
         }
 
-        return -1;  //if the GPU id is invalid
+        return -1;
     }
     
     public LocalDateTime getExpectedFinishTime(int gpuId) {
@@ -377,26 +386,21 @@ public class Scheduler {
         return null;
     }
     
- // Calculates the percentage of available GPU time spent executing jobs.
     public double getUtilization() {
-
-        // Calculate how many minutes have passed since the simulation started.
-        long elapsed = Duration.between(
-            initialSimulationTime, simulationTime
-        ).toMinutes();
+        long elapsed =
+                Duration.between(initialSimulationTime, simulationTime).toMinutes();
 
         if (elapsed <= 0) {
             return Double.NaN;
         }
 
-        long busyMinutes = 0;     //the total execution time of every job that has started
+        long busyMinutes = 0;
 
         for (Job job : allJobs) {
             if (job.getStartTime() == null) {
                 continue;
             }
 
-         // Stores the end of the execution interval being counted.
             LocalDateTime end = null;
 
             if (job.getStatus() == JobStatus.RUNNING) {
@@ -404,15 +408,12 @@ public class Scheduler {
             } else if (job.getStatus() == JobStatus.COMPLETED) {
                 end = job.getFinishTime();
             } else if (job.getStatus() == JobStatus.CANCELLED) {
-                end = job.getCancellationTime(); //use cancellationTime not finished time
+                end = job.getCancellationTime();
             }
 
             if (end != null) {
-
                 long jobMinutes =
-                    Duration.between(job.getStartTime(), end).toMinutes();
-
-                // Add this job's non-negative execution time to the total.
+                        Duration.between(job.getStartTime(), end).toMinutes();
                 busyMinutes += Math.max(0, jobMinutes);
             }
         }
@@ -426,7 +427,7 @@ public class Scheduler {
             return null;
         }
 
-        if (job.getStartTime() != null) {    //job already started
+        if (job.getStartTime() != null) {
             return job.getStartTime();
         }
 
@@ -436,7 +437,7 @@ public class Scheduler {
             return null;
         }
 
-        return simulationTime.plusMinutes(wait);     //prediction for a job in the queue
+        return simulationTime.plusMinutes(wait);
     }
     
     public LocalDateTime getPredictedFinishTime(Job job) {
@@ -461,8 +462,6 @@ public class Scheduler {
 
         return start.plusMinutes(job.getDuration());
     }
-
-    // Restore saved job history after restarting the application.
     public boolean restoreSavedJob(
             Job job,
             JobStatus savedStatus,
@@ -477,42 +476,38 @@ public class Scheduler {
             return false;
         }
 
-        for (Job savedJob : allJobs) {      //reject duplicates
+        for (Job savedJob : allJobs) {
             if (savedJob.getJobId() == job.getJobId()) {
                 return false;
             }
         }
 
-        if (savedStatus == JobStatus.QUEUED) {      //restore queued jobs 
+        if (savedStatus == JobStatus.QUEUED) {
             waitingQueue.add(job);
-            sortWaitingQueue();
-        } 
-        else if (savedStatus == JobStatus.RUNNING) {      //restore running jobs
+        } else if (savedStatus == JobStatus.RUNNING) {
             if (gpuId == null || gpuId < 1 || gpuId > gpus.length || !gpus[gpuId - 1].isAvailable() || startTime == null) {
                 return false;
             }
 
             job.startJob(gpuId, startTime);
             gpus[gpuId - 1].assignJob(job);
-        }
-        else if (savedStatus == JobStatus.COMPLETED) {       //restore completed jobs
+        } else if (savedStatus == JobStatus.COMPLETED) {
             if (gpuId == null || startTime == null || finishTime == null) {
                 return false;
             }
 
             job.startJob(gpuId, startTime);
             job.completeJob(finishTime);
-        }
-        else if (savedStatus == JobStatus.CANCELLED) {       //restore cancelled jobs
+        } else if (savedStatus == JobStatus.CANCELLED) {
             if (startTime != null && gpuId != null) {
                 job.startJob(gpuId, startTime);
             }
             job.cancelJob(cancellationTime, cancelledBy, reason);
         }
 
-        allJobs.add(job);         //preserve the restored job in the history
+        allJobs.add(job);
 
-        if (job.getJobId() >= nextJobId) {      //prevent duplicates after restarting
+        if (job.getJobId() >= nextJobId) {
             nextJobId = job.getJobId() + 1;
         }
 

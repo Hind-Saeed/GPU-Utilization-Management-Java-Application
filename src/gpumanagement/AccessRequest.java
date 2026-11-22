@@ -1,9 +1,9 @@
 package gpumanagement;
 
+import gpumanagement.AccessRequest.Status;
+
 public class AccessRequest {
-    public enum Status {
-        PENDING, APPROVED, REJECTED
-    }
+    public enum Status {PENDING, APPROVED, REJECTED}
 
     private final String universityId;
     private final String name;
@@ -12,8 +12,7 @@ public class AccessRequest {
     private final String password;
     private Status status = Status.PENDING;
 
-    public AccessRequest(String universityId, String name, String email,
-                         String phone, String password) {
+    public AccessRequest(String universityId, String name, String email, String phone, String password) {
         this.universityId = universityId;
         this.name = name;
         this.email = email;

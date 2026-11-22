@@ -9,25 +9,26 @@ public class Main {
 		loadSavedData(); //restore data from saved file
 		new MainFrame();
 	}
-	// Data Restoration when the app opens
+
 	private static void loadSavedData() {
-		Storage storage = new Storage(); // storage object to access saved data
+		Storage storage = new Storage();
 		MainFrame.accountService = new AccountService();
 		MainFrame.scheduler = null;
 		MainFrame.simulationStart = null;
 
-		//Restore Allowances
 		String[][] allowanceRows = storage.loadAllowance();
 		Map<String, TimeAllowance> allowances = new HashMap<>(); //link student to their allowance
 		for (int i = 0; i < allowanceRows.length; i++) {
 			try {
-				allowances.put(allowanceRows[i][0], new TimeAllowance(Integer.parseInt(allowanceRows[i][1]), Integer.parseInt(allowanceRows[i][2]), 
-																	  Integer.parseInt(allowanceRows[i][3])));
+				allowances.put(allowanceRows[i][0], new TimeAllowance(
+						Integer.parseInt(allowanceRows[i][1]),
+						Integer.parseInt(allowanceRows[i][2]),
+						Integer.parseInt(allowanceRows[i][3])));
 			} catch (Exception ex) {
 				System.out.println("Skipped an invalid saved allowance.");
 			}
 		}
-		// Restore Student Accounts
+
 		String[][] accountRows = storage.loadAccount();
 		for (int i = 0; i < accountRows.length; i++) {
 			try {
@@ -40,7 +41,7 @@ public class Main {
 				System.out.println("Skipped an invalid saved student account.");
 			}
 		}
-		//Restore requests
+
 		String[][] requestRows = storage.loadRequests();
 		for (int i = 0; i < requestRows.length; i++) {
 			try {
@@ -51,7 +52,7 @@ public class Main {
 				System.out.println("Skipped an invalid saved registration request.");
 			}
 		}
-		//Restore Simulation time
+
 		String savedClock = storage.loadClock();
 		String startText = storage.loadSimulationStart();
 		
@@ -60,6 +61,9 @@ public class Main {
 		        LocalDateTime currentTime = LocalDateTime.parse(savedClock);
 		        
 		        MainFrame.simulationStart = startText.equals("Not set") ? currentTime : LocalDateTime.parse(startText);
+		        MainFrame.simulationStart = startText.equals("Not set")
+		                ? currentTime
+		                : LocalDateTime.parse(startText);
 		        MainFrame.scheduler = new Scheduler(currentTime, MainFrame.simulationStart);
 
 		        for (Student student : MainFrame.accountService.getStudents(new Administrator())) {
@@ -74,7 +78,7 @@ public class Main {
 		    }
 		}
 	}
-	// Job Restoration
+	
 	private static void restoreJobs(Storage storage) {
 	    String[][] rows = storage.loadJobs();
 	    String[][] gpuRows = storage.loadGpuAssignments();
@@ -89,8 +93,8 @@ public class Main {
 	            System.out.println("Skipped an invalid GPU assignment.");
 	        }
 	    }
-		//Restore each job row
-	    for (int i = 0; i < rows.length; i++) { //parse job rows and load them
+
+	    for (int i = 0; i < rows.length; i++) {
 	        try {
 	            int jobId = Integer.parseInt(rows[i][0].trim());
 	            String studentId = rows[i][1].trim();
@@ -115,7 +119,8 @@ public class Main {
 	            String cancelledBy = rows[i][12].trim();
 	            String reason = rows[i][13].trim();
 
-	            Job job = new Job(jobId, studentId, title, application, description, size, submitted);
+	            Job job = new Job(
+	                    jobId, studentId, title, application, description, size, submitted);
 
 	            boolean restored = MainFrame.scheduler.restoreSavedJob(
 	                    job, status, gpuId, started, finished,
@@ -129,7 +134,7 @@ public class Main {
 	        }
 	    }
 	}
-	// Convert time stamp to proper format
+
 	private static LocalDateTime savedTime(String value) {
 	    if (value == null || value.trim().isEmpty()) {
 	        return null;
