@@ -176,24 +176,15 @@ public class JobRows {
         return rows.toArray(new String[rows.size()][]);
     }
 
-    public static String utilization(ArrayList<Job> jobs, Scheduler scheduler, LocalDateTime simulationStart) {
-        if (scheduler == null || simulationStart == null) {return "N/A";}
-        LocalDateTime simulation = scheduler.getSimulationTime();
-        long elapsed = minutesBetween(simulationStart, simulation);
-        if (elapsed <= 0) {return "N/A";}
-        long busy = 0;
-        for (Job job : jobs) {
-            if (job.getStartTime() != null) {
-                LocalDateTime end = simulation; //set to curent simulation and change accordingly
-                if (job.getStatus() == JobStatus.COMPLETED) {
-                    end = job.getFinishTime();
-                } else if (job.getStatus() == JobStatus.CANCELLED) {
-                    end = job.getCancellationTime();
-                }
-                busy += minutesBetween(job.getStartTime(), end);
-            }
+    public static String utilization(Scheduler scheduler) {
+        if (scheduler == null) {
+            return "N/A";
         }
-        double util = busy * 100.0 / (4.0 * elapsed);
-        return String.format("%.1f%%", util);
+        double percent = scheduler.getUtilization();
+
+        if (Double.isNaN(percent) || Double.isInfinite(percent)) {
+            return "N/A";
+        }
+        return String.format(java.util.Locale.US, "%.1f%%", percent);
     }
 }
