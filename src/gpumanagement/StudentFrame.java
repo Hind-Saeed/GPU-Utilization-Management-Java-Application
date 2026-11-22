@@ -19,6 +19,7 @@ public class StudentFrame extends ScreenFormat implements ActionListener {
     private TaskSize selectedSize;
 
     public StudentFrame(Student student) {
+    	super();
         this.student = student;
         setTitle("Student Dashboard");
         setSize(1300, 650);

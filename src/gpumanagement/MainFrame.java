@@ -16,6 +16,7 @@ public class MainFrame extends ScreenFormat implements ActionListener {
     protected static LocalDateTime simulationStart;
     
     public MainFrame() {
+    	super();
         setTitle("GPU Utilization Management");
         setSize(1300, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

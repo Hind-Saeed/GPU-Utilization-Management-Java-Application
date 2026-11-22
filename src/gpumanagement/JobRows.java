@@ -185,6 +185,6 @@ public class JobRows {
         if (Double.isNaN(percent) || Double.isInfinite(percent)) {
             return "N/A";
         }
-        return String.format(java.util.Locale.US, "%.1f%%", percent);
+        return String.format("%.1f%%", percent);
     }
 }

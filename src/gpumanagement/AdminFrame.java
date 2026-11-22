@@ -39,9 +39,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
     private Storage fileStorage;
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-    private String fmt(LocalDateTime t) {return t == null ? "--" : t.format(FMT);}
 	
-
     public AdminFrame(Scheduler scheduler, AccountService accountService, User currentUser) {
         super();
         this.scheduler = scheduler;
@@ -146,6 +144,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         }
         return fmt(scheduler.getSimulationTime());
     }
+    private String fmt(LocalDateTime t) {return t == null ? "--" : t.format(FMT);}
 
     public void setTimePage() { //Setting simulation time using date picker
         clearScreen(4, 2);
@@ -313,39 +312,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         regRequests();
     }
 
-    private void cancelRow(int i) { //handles job cancellation
-        String studentId = cancellableJobRows[i][0];
-        String jobIdText = cancellableJobRows[i][1];
-        String reason = JOptionPane.showInputDialog(this, "Reason for cancelling job " + jobIdText + ":");
-
-        if (reason == null) {return;}
-        reason = reason.trim();
-        if (reason.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "A reason is required."); 
-            return;
-        }
-
-        int jobId;
-        try {
-            jobId = Integer.parseInt(jobIdText);
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Invalid job ID.");
-            return;
-        }
-
-        if (MainFrame.scheduler == null) {
-            JOptionPane.showMessageDialog(this, "The scheduler is not available.");
-            return;
-        }
-
-        boolean success = MainFrame.scheduler.cancelJob(jobId, "admin", reason); //Call the cancelling method from schedueler to officially cancel
-        if (success) {
-            JOptionPane.showMessageDialog(this, "Job cancelled.");
-            cancelJobs(studentId,JobRows.cancellable(currentJobs(), studentId));
-        } else {
-            JOptionPane.showMessageDialog(this, "The job could not be cancelled.");
-        }
-    }
+    
 
     private void showTable(String title, String[] headings, String[][] rows, String empty) {//some buttons had the same screen format - method to easily execute
         int cols = headings.length;
@@ -449,6 +416,40 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         backB.addActionListener(this);
         findCancelJobB.addActionListener(this);
         refreshScreen();
+    }
+    
+    private void cancelRow(int i) { //handles job cancellation
+        String studentId = cancellableJobRows[i][0];
+        String jobIdText = cancellableJobRows[i][1];
+        String reason = JOptionPane.showInputDialog(this, "Reason for cancelling job " + jobIdText + ":");
+
+        if (reason == null) {return;}
+        reason = reason.trim();
+        if (reason.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "A reason is required."); 
+            return;
+        }
+
+        int jobId;
+        try {
+            jobId = Integer.parseInt(jobIdText);
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Invalid job ID.");
+            return;
+        }
+
+        if (MainFrame.scheduler == null) {
+            JOptionPane.showMessageDialog(this, "The scheduler is not available.");
+            return;
+        }
+
+        boolean success = MainFrame.scheduler.cancelJob(jobId, "admin", reason); //Call the cancelling method from schedueler to officially cancel
+        if (success) {
+            JOptionPane.showMessageDialog(this, "Job cancelled.");
+            cancelJobs(studentId,JobRows.cancellable(currentJobs(), studentId));
+        } else {
+            JOptionPane.showMessageDialog(this, "The job could not be cancelled.");
+        }
     }
 
     public void storage() { //for saving and restoring data
