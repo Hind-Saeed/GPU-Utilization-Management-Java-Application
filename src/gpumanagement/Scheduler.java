@@ -11,15 +11,21 @@ public class Scheduler {
     private ArrayList<Job> allJobs;
     private int nextJobId;
     private LocalDateTime initialSimulationTime;
-    
-    public Scheduler(LocalDateTime startTime) {
+
+	//added these two constructors
+    public Scheduler(LocalDateTime startTime) { 
+        this(startTime, startTime);
+    }
+    public Scheduler(LocalDateTime currentTime,LocalDateTime originalStartTime) {
         waitingQueue = new LinkedList<>();
         gpus = new GPU[4];
+
         for (int i = 0; i < gpus.length; i++) {
             gpus[i] = new GPU(i + 1);
         }
-        simulationTime = startTime;
-        initialSimulationTime = startTime;
+
+        simulationTime = currentTime;
+        initialSimulationTime = originalStartTime;
         studentAllowances = new HashMap<>();
         allJobs = new ArrayList<>();
         nextJobId = 1;
@@ -373,38 +379,39 @@ public class Scheduler {
 
         return null;
     }
-    
+    //Changed utilization
     public double getUtilization() {
-
         long elapsed = Duration.between(initialSimulationTime, simulationTime).toMinutes();
 
-        if (elapsed == 0) {
+        if (elapsed <= 0) {
             return Double.NaN;
         }
 
         long busyMinutes = 0;
 
         for (Job job : allJobs) {
+            if (job.getStartTime() == null) {
+                continue;
+            }
 
-            if (job.getStartTime() != null) {
+            LocalDateTime end = null;
 
-                LocalDateTime end;
+            if (job.getStatus() == JobStatus.RUNNING) {
+                end = simulationTime;
+            } else if (job.getStatus() == JobStatus.COMPLETED) {
+                end = job.getFinishTime();
+            } else if (job.getStatus() == JobStatus.CANCELLED) {
+                end = job.getCancellationTime(); //use cancellationTime not finished time
+            }
 
-                if (job.getStatus() == JobStatus.RUNNING) {
-                    end = simulationTime;
-                } 
-                else {
-                    end = job.getFinishTime();
-                }
-
-                if (end != null) {
-                    busyMinutes += Duration.between(job.getStartTime(), end).toMinutes();
-                }
+            if (end != null) {
+                long jobMinutes =
+                        Duration.between(job.getStartTime(), end).toMinutes();
+                busyMinutes += Math.max(0, jobMinutes);
             }
         }
 
-        return (busyMinutes * 100.0) /
-               (4 * elapsed);
+        return busyMinutes * 100.0 / (4.0 * elapsed);
     }
     
     public LocalDateTime getPredictedStartTime(Job job) {
@@ -448,7 +455,7 @@ public class Scheduler {
 
         return start.plusMinutes(job.getDuration());
     }
-	    public boolean restoreSavedJob(
+    public boolean restoreSavedJob(
             Job job,
             JobStatus savedStatus,
             Integer gpuId,
