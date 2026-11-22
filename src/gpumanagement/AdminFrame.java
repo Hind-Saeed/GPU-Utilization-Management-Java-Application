@@ -41,12 +41,6 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private String fmt(LocalDateTime t) {return t == null ? "--" : t.format(FMT);}
 	
-    private String clockText() { // Set simulation time
-        if (scheduler == null) {
-        	return "Not set";
-        }
-        return fmt(scheduler.getSimulationTime());
-    }
 
     public AdminFrame(Scheduler scheduler, AccountService accountService, User currentUser) {
         super();
@@ -60,7 +54,7 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         adminPage();
         setVisible(true);
     }
-
+    
     public void adminPage() {
         clearScreen(0, 5);
 
@@ -144,6 +138,13 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         logoutB.addActionListener(this);
 
         refreshScreen();
+    }
+    
+    private String clockText() { // Set simulation time
+        if (scheduler == null) {
+        	return "Not set";
+        }
+        return fmt(scheduler.getSimulationTime());
     }
 
     public void setTimePage() { //Setting simulation time using date picker
