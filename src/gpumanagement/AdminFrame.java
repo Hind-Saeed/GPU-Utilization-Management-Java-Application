@@ -73,8 +73,8 @@ public class AdminFrame extends ScreenFormat implements ActionListener {
         queued = new JLabel("Queued: " + JobRows.count(jobs, JobStatus.QUEUED), JLabel.CENTER);
         completed = new JLabel("Completed: " + JobRows.count(jobs, JobStatus.COMPLETED),JLabel.CENTER);
         cancelled = new JLabel("Cancelled: " + JobRows.count(jobs, JobStatus.CANCELLED), JLabel.CENTER);
-        utilization = new JLabel("Utilization: " + JobRows.utilization(jobs, MainFrame.scheduler,MainFrame.simulationStart), JLabel.CENTER);
-
+        utilization = new JLabel("Utilization: " + JobRows.utilization(MainFrame.scheduler), JLabel.CENTER);
+        
         setTime = makeButton("Set simulation time");
         advance = makeButton("Advance: +1 min");
         allowance = makeButton("Student Allowance");
