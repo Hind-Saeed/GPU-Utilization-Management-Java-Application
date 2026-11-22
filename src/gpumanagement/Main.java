@@ -129,7 +129,7 @@ public class Main {
 	        }
 	    }
 	}
-	// Conver time stamp to proper format
+	// Convert time stamp to proper format
 	private static LocalDateTime savedTime(String value) {
 	    if (value == null || value.trim().isEmpty()) {
 	        return null;
