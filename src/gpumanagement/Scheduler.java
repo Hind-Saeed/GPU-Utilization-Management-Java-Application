@@ -16,7 +16,8 @@ public class Scheduler {
     public Scheduler(LocalDateTime startTime) {
         this(startTime, startTime);
     }
-
+    
+  //provide complete job history
     public Scheduler(
             LocalDateTime currentTime,
             LocalDateTime originalStartTime) {
@@ -306,16 +307,16 @@ public class Scheduler {
                     return false;
                 }
 
-                allowance.releaseReservation(job.getDuration());
+                allowance.releaseReservation(job.getDuration()); //release reserved minutes without charging the student
 
-                iterator.remove();
+                iterator.remove();  //remove the job from the waiting queue
 
-                job.cancelJob(simulationTime, cancelledBy, reason);
+                job.cancelJob(simulationTime, cancelledBy, reason); //record the cancellation and update
 
                 return true;
             }
         }
-    	
+      //Canceling a running job
     	for (GPU gpu : gpus) {
 
             Job job = gpu.getCurrentJob();
@@ -328,11 +329,11 @@ public class Scheduler {
                     return false;
                 }
 
-                int elapsed = (int) Duration.between(job.getStartTime(), simulationTime).toMinutes();
+                int elapsed = (int) Duration.between(job.getStartTime(), simulationTime).toMinutes(); //how many minutes were already done
 
                 elapsed = Math.max(0,Math.min(elapsed, job.getDuration()));
 
-                allowance.cancelRunningJob(job.getDuration(), elapsed);
+                allowance.cancelRunningJob(job.getDuration(), elapsed);  //update the allowance through TimeAllowance
 
                 job.cancelJob(simulationTime, cancelledBy, reason);
 
@@ -364,7 +365,7 @@ public class Scheduler {
             }
         }
 
-        return -1;
+        return -1;  //if the GPU id is invalid
     }
     
     public LocalDateTime getExpectedFinishTime(int gpuId) {
@@ -385,9 +386,10 @@ public class Scheduler {
 
         return null;
     }
-    
+    // Calculates the percentage of available GPU time spent executing jobs.
     public double getUtilization() {
-        long elapsed =
+        
+    	long elapsed =
                 Duration.between(initialSimulationTime, simulationTime).toMinutes();
 
         if (elapsed <= 0) {

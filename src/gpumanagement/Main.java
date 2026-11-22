@@ -61,9 +61,6 @@ public class Main {
 		        LocalDateTime currentTime = LocalDateTime.parse(savedClock);
 		        
 		        MainFrame.simulationStart = startText.equals("Not set") ? currentTime : LocalDateTime.parse(startText);
-		        MainFrame.simulationStart = startText.equals("Not set")
-		                ? currentTime
-		                : LocalDateTime.parse(startText);
 		        MainFrame.scheduler = new Scheduler(currentTime, MainFrame.simulationStart);
 
 		        for (Student student : MainFrame.accountService.getStudents(new Administrator())) {
