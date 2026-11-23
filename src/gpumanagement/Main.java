@@ -1,8 +1,6 @@
 package gpumanagement;
-
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+
 
 public class Main {
 	public static void main(String[] args) {
@@ -11,19 +9,22 @@ public class Main {
 	}
 
 	private static void loadSavedData() {
-		Storage storage = new Storage();
+		Storage storage = new Storage(); 
 		MainFrame.accountService = new AccountService();
-		MainFrame.scheduler = null;
+		MainFrame.scheduler = null; //clear any old values so that it doesn't clash with the restoration
 		MainFrame.simulationStart = null;
 
-		String[][] allowanceRows = storage.loadAllowance();
-		Map<String, TimeAllowance> allowances = new HashMap<>(); //link student to their allowance
+		String[][] allowanceRows = storage.loadAllowance(); //load saved allowances
+		
+		
+		String[] allowanceIds = new String[allowanceRows.length];
+	    TimeAllowance[] allowances = new TimeAllowance[allowanceRows.length];
+	    
 		for (int i = 0; i < allowanceRows.length; i++) {
 			try {
-				allowances.put(allowanceRows[i][0], new TimeAllowance(
-						Integer.parseInt(allowanceRows[i][1]),
-						Integer.parseInt(allowanceRows[i][2]),
-						Integer.parseInt(allowanceRows[i][3])));
+				allowanceIds[i] = allowanceRows[i][0];
+	            allowances[i] = new TimeAllowance(Integer.parseInt(allowanceRows[i][1]),Integer.parseInt(allowanceRows[i][2]),
+	                    Integer.parseInt(allowanceRows[i][3]));
 			} catch (Exception ex) {
 				System.out.println("Skipped an invalid saved allowance.");
 			}
@@ -33,7 +34,14 @@ public class Main {
 		for (int i = 0; i < accountRows.length; i++) {
 			try {
 				String id = accountRows[i][0];
-				TimeAllowance allowance = allowances.get(id);
+				TimeAllowance allowance = null;
+
+	            for (int j = 0; j < allowanceIds.length; j++) {
+	                if (id.equals(allowanceIds[j])) {
+	                    allowance = allowances[j];
+	                    break;
+	                }
+	            }
 				if (allowance == null) allowance = new TimeAllowance(100); // default value
 				Student student = new Student(id, accountRows[i][1], accountRows[i][2],accountRows[i][3], accountRows[i][4], allowance);
 				MainFrame.accountService.restoreStudent(student);
@@ -80,12 +88,16 @@ public class Main {
 	    String[][] rows = storage.loadJobs();
 	    String[][] gpuRows = storage.loadGpuAssignments();
 
-	    Map<Integer, Integer> gpuForJob = new HashMap<>();
+	    int[] assignedJobIds = new int[gpuRows.length];
+	    int[] assignedGpuIds = new int[gpuRows.length];
+	    int assignmentCount = 0;
 	    for (int i = 0; i < gpuRows.length; i++) {
 	        try {
-	            int gpuId = Integer.parseInt(gpuRows[i][0].trim());
-	            int jobId = Integer.parseInt(gpuRows[i][1].trim());
-	            gpuForJob.put(jobId, gpuId);
+	            assignedGpuIds[assignmentCount] =
+	                    Integer.parseInt(gpuRows[i][0].trim());
+	            assignedJobIds[assignmentCount] =
+	                    Integer.parseInt(gpuRows[i][1].trim());
+	            assignmentCount++;
 	        } catch (Exception ex) {
 	            System.out.println("Skipped an invalid GPU assignment.");
 	        }
@@ -105,8 +117,13 @@ public class Main {
 	            Integer gpuId = null;
 	            if (!rows[i][8].trim().isEmpty()) {
 	                gpuId = Integer.parseInt(rows[i][8].trim());
-	            } else if (gpuForJob.containsKey(jobId)) {
-	                gpuId = gpuForJob.get(jobId);
+	            } else {
+	                for (int j = 0; j < assignmentCount; j++) {
+	                    if (assignedJobIds[j] == jobId) {
+	                        gpuId = assignedGpuIds[j];
+	                        break;
+	                    }
+	                }
 	            }
 
 	            LocalDateTime started = savedTime(rows[i][9]);

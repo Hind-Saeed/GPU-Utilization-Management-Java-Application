@@ -1,32 +1,67 @@
 GPU UTILIZATION MANAGEMENT - SAVED DATA
-Clock: 2026-11-23T03:21
-Simulation start: 2026-11-23T03:21
+Clock: 2026-11-23T05:08
+Simulation start: 2026-11-23T03:38
 
 [Accounts]
-University ID | Name | Email          | Phone      | Password
-66235         | hind | hind@gmail.com | 0545354959 | 1234    
+University ID | Name      | Email               | Phone      | Password
+66235         | Hind      | hind@gmail.com      | 0501234567 | hind1   
+65879         | Lujan     | lujain@gmail.com    | 0559876543 | lujain2 
+66458         | Mariam    | mariam@hotmail.com  | 0501122334 | mariam3 
+66666         | Mohammed  | mohd@gmail.com      | 0507788999 | mohd4   
+65555         | Omkalthum | omkalthum@gmail.com | 0505432167 | omk5    
 
 [Requests]
-University ID | Name | Email          | Phone      | Password | Status  
-66235         | hind | hind@gmail.com | 0545354959 | 1234     | APPROVED
+University ID | Name      | Email               | Phone      | Password | Status  
+66235         | Hind      | hind@gmail.com      | 0501234567 | hind1    | APPROVED
+65879         | Lujan     | lujain@gmail.com    | 0559876543 | lujain2  | APPROVED
+66458         | Mariam    | mariam@hotmail.com  | 0501122334 | mariam3  | APPROVED
+66666         | Mohammed  | mohd@gmail.com      | 0507788999 | mohd4    | APPROVED
+65555         | Omkalthum | omkalthum@gmail.com | 0505432167 | omk5     | APPROVED
+67676         | Fatima    | fatima@hotmail.com  | 0505544332 | fatima6  | PENDING 
+65444         | Ahmed     | ahmed@hotmail.com   | 0508887765 | ahmed7   | REJECTED
 
 [Allowances]
 Student ID | Allocated | Used | Reserved
-66235      | 100       | 0    | 0       
+66235      | 100       | 40   | 0       
+65879      | 100       | 100  | 0       
+66458      | 100       | 90   | 0       
+66666      | 100       | 10   | 30      
+65555      | 100       | 60   | 30      
 
 [Grants]
 Student ID | Minutes | Reason | Administrator
 (no records)
 
 [Jobs]
-Job ID | Student ID | Title | Application | Description | Size | Submitted | Status | GPU | Started | Finished | Cancelled at | Cancelled by | Reason
-(no records)
+Job ID | Student ID | Title               | Application | Description                                    | Size       | Submitted        | Status    | GPU | Started          | Finished         | Cancelled at     | Cancelled by | Reason          
+1      | 66235      | Data Cleanup        | python      | clean data for a model                         | VERY_LARGE | 2026-11-23T03:38 | CANCELLED | 1   | 2026-11-23T03:38 | 2026-11-23T03:38 | 2026-11-23T03:38 | 66235        | Too long        
+2      | 65879      | Output verification | python      | verify output is correct                       | VERY_LARGE | 2026-11-23T03:38 | COMPLETED | 2   | 2026-11-23T03:38 | 2026-11-23T04:38 |                  |              |                 
+3      | 66458      | Find Duplicates     | c++         | scan a folder for duplicate                    | LARGE      | 2026-11-23T03:38 | COMPLETED | 3   | 2026-11-23T03:38 | 2026-11-23T04:08 |                  |              |                 
+4      | 66666      | Audio conversion    | c++         | convert a song to a video                      | VERY_LARGE | 2026-11-23T03:38 | CANCELLED | 4   | 2026-11-23T03:38 | 2026-11-23T03:38 | 2026-11-23T03:38 | admin        | Technical issues
+5      | 65555      | Image cropping      | python      | crop images into certain sizes                 | LARGE      | 2026-11-23T03:38 | COMPLETED | 1   | 2026-11-23T03:38 | 2026-11-23T04:08 |                  |              |                 
+6      | 66235      | model evaluation    | c++         | evaluate the results of a model                | LARGE      | 2026-11-23T03:38 | COMPLETED | 4   | 2026-11-23T03:38 | 2026-11-23T04:08 |                  |              |                 
+7      | 65879      | Image training      | c++         | train a small image model                      | LARGE      | 2026-11-23T03:38 | COMPLETED | 1   | 2026-11-23T04:08 | 2026-11-23T04:38 |                  |              |                 
+8      | 66458      | Summarize data      | python      | calculate mean, median, and standard deviation | LARGE      | 2026-11-23T03:38 | COMPLETED | 3   | 2026-11-23T04:08 | 2026-11-23T04:38 |                  |              |                 
+9      | 66666      | Image filtering     | python      | isolate images                                 | SMALL      | 2026-11-23T03:38 | COMPLETED | 4   | 2026-11-23T04:08 | 2026-11-23T04:13 |                  |              |                 
+10     | 65555      | Chart creation      | python      | create charts using data                       | MEDIUM     | 2026-11-23T03:38 | COMPLETED | 4   | 2026-11-23T04:13 | 2026-11-23T04:28 |                  |              |                 
+11     | 66235      | Object detection    | python      | detect object from an image                    | SMALL      | 2026-11-23T03:38 | COMPLETED | 4   | 2026-11-23T04:28 | 2026-11-23T04:33 |                  |              |                 
+12     | 66235      | Image conversation  | c++         | convert an image into a file                   | SMALL      | 2026-11-23T03:38 | COMPLETED | 4   | 2026-11-23T04:33 | 2026-11-23T04:38 |                  |              |                 
+13     | 65879      | File sorting        | python      | sort files by names                            | SMALL      | 2026-11-23T03:38 | COMPLETED | 1   | 2026-11-23T04:38 | 2026-11-23T04:43 |                  |              |                 
+14     | 65879      | text counting       | java        | count the number of word in a text             | SMALL      | 2026-11-23T03:38 | COMPLETED | 2   | 2026-11-23T04:38 | 2026-11-23T04:43 |                  |              |                 
+15     | 66458      | Frame extraction    | python      | extract images from videos                     | MEDIUM     | 2026-11-23T03:38 | COMPLETED | 3   | 2026-11-23T04:38 | 2026-11-23T04:53 |                  |              |                 
+16     | 66458      | Check input         | java        | check missing values                           | MEDIUM     | 2026-11-23T03:38 | COMPLETED | 4   | 2026-11-23T04:38 | 2026-11-23T04:53 |                  |              |                 
+17     | 66666      | File renaming       | c++         | change names of files                          | LARGE      | 2026-11-23T03:38 | RUNNING   | 1   | 2026-11-23T04:43 |                  |                  |              |                 
+18     | 66666      | format checking     | java        | Verify correct format in files                 | SMALL      | 2026-11-23T03:38 | COMPLETED | 2   | 2026-11-23T04:43 | 2026-11-23T04:48 |                  |              |                 
+19     | 65555      | Model comparison    | c++         | compare two models                             | LARGE      | 2026-11-23T03:38 | RUNNING   | 2   | 2026-11-23T04:48 |                  |                  |              |                 
+20     | 65555      | Image compression   | c++         | compress photos to a specific size             | MEDIUM     | 2026-11-23T03:38 | COMPLETED | 3   | 2026-11-23T04:53 | 2026-11-23T05:08 |                  |              |                 
 
 [Cancellations]
-Job ID | Student ID | Status before cancellation | Application | Reason | Cancelled by | Cancellation time
-(no records)
+Job ID | Student ID | Status before cancellation | Application | Reason           | Cancelled by | Cancellation time
+1      | 66235      | RUNNING                    | python      | Too long         | 66235        | 2026-11-23T03:38 
+4      | 66666      | RUNNING                    | c++         | Technical issues | admin        | 2026-11-23T03:38 
 
 [GPU Assignments]
 GPU ID | Job ID
-(no records)
+1      | 17    
+2      | 19    
 
